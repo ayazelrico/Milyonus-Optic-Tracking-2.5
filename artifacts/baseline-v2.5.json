@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0.0",
+  "generated_at": "2026-09-27T12:09:40.332Z",
+  "model_version": "2.5",
+  "scenario": "day-1-build-only",
+  "input": null,
+  "build": {
+    "status": "passed",
+    "duration_ms": 977.77,
+    "exit_code": 0,
+    "stderr_tail": ""
+  },
+  "metrics": {
+    "sample_count": 0,
+    "notes": [
+      "No session CSV was supplied. Run the browser with a real camera, export CSV, and pass it with --input."
+    ]
+  }
+}
