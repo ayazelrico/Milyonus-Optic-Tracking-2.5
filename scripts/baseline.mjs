@@ -27,10 +27,17 @@ const KNOWN_NUMERIC_FIELDS = [
 ];
 
 function parseArgs(argv) {
-  const args = { input: null, output: DEFAULT_OUTPUT, scenario: "unspecified", skipBuild: false };
+  const args = {
+    input: null,
+    landmarks: null,
+    output: DEFAULT_OUTPUT,
+    scenario: "unspecified",
+    skipBuild: false,
+  };
   for (let index = 0; index < argv.length; index += 1) {
     const token = argv[index];
     if (token === "--input") args.input = argv[++index];
+    else if (token === "--landmarks") args.landmarks = argv[++index];
     else if (token === "--output") args.output = argv[++index];
     else if (token === "--scenario") args.scenario = argv[++index];
     else if (token === "--skip-build") args.skipBuild = true;
@@ -39,6 +46,7 @@ function parseArgs(argv) {
 
 Options:
   --input <csv>       Session CSV exported by the application
+  --landmarks <json>  Landmark frames for jitter analysis
   --output <json>     Output path (default: ${DEFAULT_OUTPUT})
   --scenario <name>   Test scenario label
   --skip-build        Do not measure the local production build
@@ -199,6 +207,47 @@ function metricSummary(rows) {
   return result;
 }
 
+function landmarkJitterSummary(frames) {
+  const distances = [];
+  const pointsPerFrame = new Set();
+  const previousByTrack = new Map();
+
+  for (const frame of frames) {
+    if (!Array.isArray(frame.landmarks) || frame.landmarks.length === 0) continue;
+    pointsPerFrame.add(frame.landmarks.length);
+    const trackId = String(frame.track_id ?? "primary");
+    const previous = previousByTrack.get(trackId);
+    if (previous && previous.length === frame.landmarks.length) {
+      for (let index = 0; index < frame.landmarks.length; index += 1) {
+        const current = frame.landmarks[index];
+        const prior = previous[index];
+        if (!current || !prior) continue;
+        const dx = Number(current.x) - Number(prior.x);
+        const dy = Number(current.y) - Number(prior.y);
+        const dz = Number(current.z ?? 0) - Number(prior.z ?? 0);
+        const distance = Math.hypot(dx, dy, dz);
+        if (Number.isFinite(distance)) distances.push(distance);
+      }
+    }
+    previousByTrack.set(trackId, frame.landmarks);
+  }
+
+  return {
+    frame_count: frames.length,
+    track_count: previousByTrack.size,
+    landmark_count: pointsPerFrame.size === 1 ? [...pointsPerFrame][0] : null,
+    transition_count: distances.length,
+    mean_displacement: rounded(mean(distances)),
+    p95_displacement: rounded(percentile(distances, 0.95)),
+    max_displacement: distances.length ? rounded(Math.max(...distances)) : null,
+    coordinate_space: "normalized MediaPipe coordinates",
+    notes: [
+      "Jitter is the frame-to-frame Euclidean displacement of corresponding landmarks.",
+      "Compare runs with the same subject, camera, distance, lighting, and frame rate.",
+    ],
+  };
+}
+
 function measureBuild() {
   if (!existsSync("package.json")) return { status: "skipped", reason: "package.json not found" };
   const started = performance.now();
@@ -214,6 +263,10 @@ function measureBuild() {
 
 const args = parseArgs(process.argv.slice(2));
 const rows = args.input && existsSync(args.input) ? parseCsv(readFileSync(args.input, "utf8")) : [];
+const landmarkFrames =
+  args.landmarks && existsSync(args.landmarks)
+    ? JSON.parse(readFileSync(args.landmarks, "utf8"))
+    : null;
 const report = {
   schema_version: "1.0.0",
   generated_at: new Date().toISOString(),
@@ -232,6 +285,17 @@ const report = {
         ],
       },
 };
+
+report.metrics.landmark_jitter = landmarkFrames
+  ? landmarkJitterSummary(landmarkFrames)
+  : {
+      frame_count: 0,
+      transition_count: 0,
+      mean_displacement: null,
+      p95_displacement: null,
+      max_displacement: null,
+      notes: ["Pass --landmarks <json> to calculate frame-to-frame landmark jitter."],
+    };
 
 mkdirSync(args.output.split("/").slice(0, -1).join("/") || ".", { recursive: true });
 writeFileSync(args.output, `${JSON.stringify(report, null, 2)}\n`);

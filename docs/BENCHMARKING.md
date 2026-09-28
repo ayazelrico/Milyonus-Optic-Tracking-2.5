@@ -40,6 +40,19 @@ npm run baseline -- \
 
 The report contains only measurements available in the CSV. Missing fields remain `null`; the script never substitutes synthetic values.
 
+## 4. Measure landmark jitter
+
+For a stationary subject, export consecutive landmark frames as a JSON array and pass the file to the same harness:
+
+```sh
+npm run baseline -- \
+  --landmarks artifacts/stationary-face-landmarks.json \
+  --output artifacts/baseline-v2.5.json \
+  --scenario stationary-face
+```
+
+Each frame must contain a `landmarks` array with normalized MediaPipe points (`x`, `y`, and optional `z`). Frames with the same `track_id` are compared point by point. The report includes mean, p95, and maximum Euclidean frame-to-frame displacement. A smaller displacement indicates less landmark jitter, but comparisons are valid only when camera, subject, distance, lighting, and frame rate are held constant.
+
 ## Metrics
 
 When the exported CSV contains the relevant columns, the report calculates:
@@ -54,6 +67,7 @@ When the exported CSV contains the relevant columns, the report calculates:
 - CPU usage: mean and 95th percentile
 - Memory usage: mean and peak
 - Production build duration and status
+- Landmark jitter: mean, p95, and maximum normalized displacement
 
 The current application export is expected to provide fields such as `second`, `timestamp`, `has_face`, `confidence`, `yaw_deg`, `pitch_deg`, `gaze`, and `focus_score`. Runtime instrumentation fields such as `fps`, `inference_latency_ms`, `cpu_percent`, `memory_mb`, and `track_id` are consumed automatically when they are added to the export schema.
 
