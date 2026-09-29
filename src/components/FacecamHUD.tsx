@@ -78,6 +78,7 @@ type PixelBox = { x: number; y: number; width: number; height: number };
 interface FaceReading {
   id: number;
   confidence: number | null;
+  rawPose: HeadPose;
   pose: HeadPose;
   scores: Scores;
   dominant: Emotion;
@@ -362,9 +363,10 @@ export default function FacecamHUD() {
       const pts = faceLandmarks[i]!;
       const box = boxes[i]!;
       const matrix = landmarkResult.facialTransformationMatrixes[i]?.data;
-      const pose = matrix
+      const rawPose = matrix
         ? poseFromTransformMatrix(matrix)
         : { yaw: 0, pitch: 0, roll: 0, distance: 0 };
+      const pose = processorRef.current.smoothPose(trackIds[i]!, rawPose).smoothed;
       const categories = landmarkResult.faceBlendshapes[i]?.categories ?? [];
       const scores = scoresFromBlendshapes(categories, pose.roll);
       const dominant = dominantEmotion(scores);
@@ -414,6 +416,7 @@ export default function FacecamHUD() {
       readings.push({
         id,
         confidence: confidences[i] ?? null,
+        rawPose,
         pose,
         scores,
         dominant,

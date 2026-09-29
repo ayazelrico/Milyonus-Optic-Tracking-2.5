@@ -53,6 +53,10 @@ npm run baseline -- \
 
 Each frame must contain a `landmarks` array with normalized MediaPipe points (`x`, `y`, and optional `z`). Frames with the same `track_id` are compared point by point. The report includes mean, p95, and maximum Euclidean frame-to-frame displacement. A smaller displacement indicates less landmark jitter, but comparisons are valid only when camera, subject, distance, lighting, and frame rate are held constant.
 
+## 5. Temporal pose smoothing
+
+The runtime preserves both `rawPose` and EMA-smoothed `pose` values for each face reading. The current default alpha is `0.3`: lower values increase stability but can reduce responsiveness, while higher values track motion more quickly with less smoothing. A real-camera motion scenario should compare raw and smoothed yaw, pitch, roll, and distance before changing this parameter.
+
 ## Metrics
 
 When the exported CSV contains the relevant columns, the report calculates:

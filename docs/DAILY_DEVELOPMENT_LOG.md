@@ -23,3 +23,15 @@
 - **Metric:** Fixture path reported the expected displacement values; production `mean_displacement`, `p95_displacement`, and `max_displacement` require a stationary-subject landmark JSON export.
 - **Regression:** The production build and baseline CLI remained functional. No camera regression assessment was possible.
 - **Next action:** Capture at least 60 seconds of stationary-subject landmark frames under controlled lighting and record the resulting jitter metrics before proceeding to temporal smoothing.
+
+## Day 3 — Temporal Smoothing
+
+- **Date:** 2026-09-29
+- **Feature:** Raw and EMA-smoothed head-pose signals
+- **Problem:** The existing EMA path smoothed landmark-derived boxes, but pose values used by focus and expression logic were still represented only as raw values. Stability and responsiveness could not be compared explicitly.
+- **Change:** Added per-track pose EMA smoothing with the existing default alpha of `0.3`. Each `FaceReading` now retains `rawPose` and exposes the smoothed pose as `pose`; the smoother also resets pose state together with landmark state.
+- **Expected improvement:** Reduce frame-to-frame yaw, pitch, roll, and distance noise while preserving raw values for responsiveness and regression analysis.
+- **Actual result:** The implementation compiled successfully in the production build. No real-camera motion sequence was available, so numerical stability gain and lag remain unmeasured.
+- **Metric:** Runtime alpha is `0.3`; raw-versus-smoothed pose deltas require a real-camera CSV or telemetry capture.
+- **Regression:** The build remained successful. Camera responsiveness, focus classification, and pose lag require manual validation.
+- **Next action:** Run a controlled slow-motion and fast-motion camera session, compare raw and smoothed pose traces, then tune only if stability improves without unacceptable lag. Proceed to Day 4 adaptive smoothing afterward.

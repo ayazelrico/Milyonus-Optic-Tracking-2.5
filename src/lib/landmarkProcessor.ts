@@ -1,7 +1,9 @@
 import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
+import type { HeadPose } from "@/lib/facePose";
 
 export class LandmarkProcessor {
   private smoothedLandmarks = new Map<number, NormalizedLandmark[]>();
+  private smoothedPoses = new Map<number, HeadPose>();
   private readonly alpha: number;
 
   constructor(alpha: number = 0.3) {
@@ -31,6 +33,27 @@ export class LandmarkProcessor {
 
     this.smoothedLandmarks.set(faceId, smoothed);
     return smoothed;
+  }
+
+  /**
+   * Applies the same EMA policy to pose signals while preserving the raw pose.
+   * Keeping both values makes responsiveness loss measurable instead of hidden.
+   */
+  smoothPose(faceId: number, raw: HeadPose): { raw: HeadPose; smoothed: HeadPose } {
+    const previous = this.smoothedPoses.get(faceId);
+    if (!previous) {
+      this.smoothedPoses.set(faceId, { ...raw });
+      return { raw, smoothed: raw };
+    }
+
+    const smoothed = {
+      yaw: this.alpha * raw.yaw + (1 - this.alpha) * previous.yaw,
+      pitch: this.alpha * raw.pitch + (1 - this.alpha) * previous.pitch,
+      roll: this.alpha * raw.roll + (1 - this.alpha) * previous.roll,
+      distance: this.alpha * raw.distance + (1 - this.alpha) * previous.distance,
+    };
+    this.smoothedPoses.set(faceId, smoothed);
+    return { raw, smoothed };
   }
 
   private dist(p1: NormalizedLandmark, p2: NormalizedLandmark): number {
@@ -92,5 +115,6 @@ export class LandmarkProcessor {
 
   reset() {
     this.smoothedLandmarks.clear();
+    this.smoothedPoses.clear();
   }
 }
