@@ -35,3 +35,15 @@
 - **Metric:** Runtime alpha is `0.3`; raw-versus-smoothed pose deltas require a real-camera CSV or telemetry capture.
 - **Regression:** The build remained successful. Camera responsiveness, focus classification, and pose lag require manual validation.
 - **Next action:** Run a controlled slow-motion and fast-motion camera session, compare raw and smoothed pose traces, then tune only if stability improves without unacceptable lag. Proceed to Day 4 adaptive smoothing afterward.
+
+## Day 4 — Adaptive Smoothing
+
+- **Date:** 2026-09-30
+- **Feature:** Motion-adaptive pose EMA
+- **Problem:** A fixed pose alpha applies the same amount of smoothing to stationary and fast-moving subjects, forcing a trade-off between stability and responsiveness.
+- **Change:** Pose EMA now derives alpha from frame-to-frame yaw, pitch, and roll motion. Slow movement uses a `0.15` smoothing floor; faster movement increases alpha up to `0.7`. Each `FaceReading` records the applied `smoothingAlpha`.
+- **Expected improvement:** Suppress stationary noise more strongly while reducing lag during rapid head movement.
+- **Actual result:** The adaptive path compiled successfully in the production build. No real-camera motion sequence was available, so stability improvement and responsiveness change remain unmeasured.
+- **Metric:** `MIN_POSE_ALPHA = 0.15`; `MAX_POSE_ALPHA = 0.7`; `MOTION_ALPHA_GAIN = 0.025`; runtime alpha is exposed per reading.
+- **Regression:** Production build passed. Camera motion behavior, focus transitions, and alpha distribution require manual validation.
+- **Next action:** Capture stationary, slow-turn, and fast-turn sessions; compare jitter, raw-to-smoothed lag, focus transitions, and observed alpha values before changing the bounds. Proceed to Day 5 confidence filtering afterward.

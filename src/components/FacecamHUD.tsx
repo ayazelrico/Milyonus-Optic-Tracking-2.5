@@ -80,6 +80,7 @@ interface FaceReading {
   confidence: number | null;
   rawPose: HeadPose;
   pose: HeadPose;
+  smoothingAlpha: number;
   scores: Scores;
   dominant: Emotion;
   box: PixelBox;
@@ -366,7 +367,8 @@ export default function FacecamHUD() {
       const rawPose = matrix
         ? poseFromTransformMatrix(matrix)
         : { yaw: 0, pitch: 0, roll: 0, distance: 0 };
-      const pose = processorRef.current.smoothPose(trackIds[i]!, rawPose).smoothed;
+      const smoothedPose = processorRef.current.smoothPose(trackIds[i]!, rawPose);
+      const pose = smoothedPose.smoothed;
       const categories = landmarkResult.faceBlendshapes[i]?.categories ?? [];
       const scores = scoresFromBlendshapes(categories, pose.roll);
       const dominant = dominantEmotion(scores);
@@ -418,6 +420,7 @@ export default function FacecamHUD() {
         confidence: confidences[i] ?? null,
         rawPose,
         pose,
+        smoothingAlpha: smoothedPose.alpha,
         scores,
         dominant,
         box,

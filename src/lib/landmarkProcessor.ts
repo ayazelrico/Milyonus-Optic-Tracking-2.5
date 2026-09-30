@@ -1,6 +1,10 @@
 import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
 import type { HeadPose } from "@/lib/facePose";
 
+const MIN_POSE_ALPHA = 0.15;
+const MAX_POSE_ALPHA = 0.7;
+const MOTION_ALPHA_GAIN = 0.025;
+
 export class LandmarkProcessor {
   private smoothedLandmarks = new Map<number, NormalizedLandmark[]>();
   private smoothedPoses = new Map<number, HeadPose>();
@@ -39,21 +43,26 @@ export class LandmarkProcessor {
    * Applies the same EMA policy to pose signals while preserving the raw pose.
    * Keeping both values makes responsiveness loss measurable instead of hidden.
    */
-  smoothPose(faceId: number, raw: HeadPose): { raw: HeadPose; smoothed: HeadPose } {
+  smoothPose(faceId: number, raw: HeadPose): { raw: HeadPose; smoothed: HeadPose; alpha: number } {
     const previous = this.smoothedPoses.get(faceId);
     if (!previous) {
       this.smoothedPoses.set(faceId, { ...raw });
-      return { raw, smoothed: raw };
+      return { raw, smoothed: raw, alpha: this.alpha };
     }
 
+    const motion = Math.hypot(raw.yaw - previous.yaw, raw.pitch - previous.pitch, raw.roll - previous.roll);
+    const alpha = Math.min(
+      MAX_POSE_ALPHA,
+      Math.max(MIN_POSE_ALPHA, MIN_POSE_ALPHA + motion * MOTION_ALPHA_GAIN),
+    );
     const smoothed = {
-      yaw: this.alpha * raw.yaw + (1 - this.alpha) * previous.yaw,
-      pitch: this.alpha * raw.pitch + (1 - this.alpha) * previous.pitch,
-      roll: this.alpha * raw.roll + (1 - this.alpha) * previous.roll,
-      distance: this.alpha * raw.distance + (1 - this.alpha) * previous.distance,
+      yaw: alpha * raw.yaw + (1 - alpha) * previous.yaw,
+      pitch: alpha * raw.pitch + (1 - alpha) * previous.pitch,
+      roll: alpha * raw.roll + (1 - alpha) * previous.roll,
+      distance: alpha * raw.distance + (1 - alpha) * previous.distance,
     };
     this.smoothedPoses.set(faceId, smoothed);
-    return { raw, smoothed };
+    return { raw, smoothed, alpha };
   }
 
   private dist(p1: NormalizedLandmark, p2: NormalizedLandmark): number {

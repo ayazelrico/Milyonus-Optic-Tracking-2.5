@@ -55,7 +55,7 @@ Each frame must contain a `landmarks` array with normalized MediaPipe points (`x
 
 ## 5. Temporal pose smoothing
 
-The runtime preserves both `rawPose` and EMA-smoothed `pose` values for each face reading. The current default alpha is `0.3`: lower values increase stability but can reduce responsiveness, while higher values track motion more quickly with less smoothing. A real-camera motion scenario should compare raw and smoothed yaw, pitch, roll, and distance before changing this parameter.
+The runtime preserves both `rawPose` and EMA-smoothed `pose` values for each face reading. Pose smoothing is adaptive: stationary frames use a stronger smoothing floor of `0.15`, while faster yaw/pitch/roll motion increases alpha up to `0.7` to reduce lag. Each reading exposes the applied `smoothingAlpha`. A real-camera motion scenario should compare raw and smoothed yaw, pitch, roll, distance, and alpha before changing these bounds.
 
 ## Metrics
 
