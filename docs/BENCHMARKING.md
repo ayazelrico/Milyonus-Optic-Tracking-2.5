@@ -57,6 +57,10 @@ Each frame must contain a `landmarks` array with normalized MediaPipe points (`x
 
 The runtime preserves both `rawPose` and EMA-smoothed `pose` values for each face reading. Pose smoothing is adaptive: stationary frames use a stronger smoothing floor of `0.15`, while faster yaw/pitch/roll motion increases alpha up to `0.7` to reduce lag. Each reading exposes the applied `smoothingAlpha`. A real-camera motion scenario should compare raw and smoothed yaw, pitch, roll, distance, and alpha before changing these bounds.
 
+## 6. Confidence filtering
+
+Downstream measurements use detector confidence as an evidence weight. Confidence below `0.30` is rejected from gaze and focus calculations. Confidence from `0.30` through `0.75` pulls pose deviations toward neutral and proportionally suppresses expression scores. Confidence at or above `0.75` receives full weight. The raw smoothed pose remains available for diagnostics, while attention metrics use the confidence-filtered pose.
+
 ## Metrics
 
 When the exported CSV contains the relevant columns, the report calculates:

@@ -9,8 +9,32 @@ const PITCH_AWAY_DEG = 12;
 /** Yaw/pitch magnitude at which the focus score bottoms out at 0. */
 const YAW_FULL_OFF_DEG = 35;
 const PITCH_FULL_OFF_DEG = 30;
+const LOW_CONFIDENCE_CUTOFF = 0.3;
+const FULL_CONFIDENCE_THRESHOLD = 0.75;
 
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
+
+/** Returns the trust weight used by downstream pose and attention metrics. */
+export function confidenceWeight(confidence: number | null): number {
+  if (confidence == null || confidence < LOW_CONFIDENCE_CUTOFF) return 0;
+  if (confidence >= FULL_CONFIDENCE_THRESHOLD) return 1;
+  return clamp01(
+    (confidence - LOW_CONFIDENCE_CUTOFF) /
+      (FULL_CONFIDENCE_THRESHOLD - LOW_CONFIDENCE_CUTOFF),
+  );
+}
+
+/** Pulls uncertain pose values toward a neutral pose; rejects low-confidence detections. */
+export function poseFromConfidence(pose: HeadPose | null, confidence: number | null): HeadPose | null {
+  const weight = confidenceWeight(confidence);
+  if (!pose || weight === 0) return null;
+  return {
+    yaw: pose.yaw * weight,
+    pitch: pose.pitch * weight,
+    roll: pose.roll * weight,
+    distance: pose.distance * weight,
+  };
+}
 
 /** Classifies where the candidate is looking, relative to the screen. */
 export function gazeDirectionFromPose(pose: HeadPose | null): GazeDirection {

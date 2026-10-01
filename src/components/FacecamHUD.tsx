@@ -13,14 +13,17 @@ import {
   EMOTIONS,
   dominantEmotion,
   emptyScores,
+  scoresFromConfidence,
   scoresFromBlendshapes,
   type Emotion,
   type Scores,
 } from "@/lib/blendshapeEmotion";
 import {
   buildMinuteReports,
+  confidenceWeight,
   focusScoreFromPose,
   gazeDirectionFromPose,
+  poseFromConfidence,
   samplesToCsv,
   type GazeDirection,
   type SecondSample,
@@ -81,6 +84,8 @@ interface FaceReading {
   rawPose: HeadPose;
   pose: HeadPose;
   smoothingAlpha: number;
+  measurementPose: HeadPose | null;
+  confidenceWeight: number;
   scores: Scores;
   dominant: Emotion;
   box: PixelBox;
@@ -201,7 +206,13 @@ export default function FacecamHUD() {
   const drawingUtilsRef = useRef<DrawingUtils | null>(null);
   const processorRef = useRef(new LandmarkProcessor());
   const lastFaceCountRef = useRef(0);
-  const latestPrimaryRef = useRef<{ confidence: number | null; pose: HeadPose | null; deepTechScore: number | null }>({
+  const latestPrimaryRef = useRef<{
+    hasFace: boolean;
+    confidence: number | null;
+    pose: HeadPose | null;
+    deepTechScore: number | null;
+  }>({
+    hasFace: false,
     confidence: null,
     pose: null,
     deepTechScore: null,
@@ -369,8 +380,12 @@ export default function FacecamHUD() {
         : { yaw: 0, pitch: 0, roll: 0, distance: 0 };
       const smoothedPose = processorRef.current.smoothPose(trackIds[i]!, rawPose);
       const pose = smoothedPose.smoothed;
+      const confidence = confidences[i] ?? null;
+      const measurementPose = poseFromConfidence(pose, confidence);
+      const weight = confidenceWeight(confidence);
       const categories = landmarkResult.faceBlendshapes[i]?.categories ?? [];
-      const scores = scoresFromBlendshapes(categories, pose.roll);
+      const rawScores = scoresFromBlendshapes(categories, pose.roll);
+      const scores = scoresFromConfidence(rawScores, weight);
       const dominant = dominantEmotion(scores);
       const id = trackIds[i]!;
       const color = cssVar(EMOTION_TOKEN[dominant]);
@@ -417,10 +432,12 @@ export default function FacecamHUD() {
 
       readings.push({
         id,
-        confidence: confidences[i] ?? null,
+        confidence,
         rawPose,
         pose,
         smoothingAlpha: smoothedPose.alpha,
+        measurementPose,
+        confidenceWeight: weight,
         scores,
         dominant,
         box,
@@ -458,12 +475,13 @@ export default function FacecamHUD() {
       (best, r) => (!best || r.area > best.area ? r : best),
       null,
     );
-    const deepTechScore = primary
-      ? calculateDeepTechScore(primary.pose, primary.scores, primary.area, vpe)
+    const deepTechScore = primary?.measurementPose
+      ? calculateDeepTechScore(primary.measurementPose, primary.scores, primary.area, vpe)
       : null;
     latestPrimaryRef.current = {
+      hasFace: primary != null,
       confidence: primary?.confidence ?? null,
-      pose: primary?.pose ?? null,
+      pose: primary?.measurementPose ?? null,
       deepTechScore,
     };
 
@@ -473,6 +491,8 @@ export default function FacecamHUD() {
         id: primary.id,
         confidence: primary.confidence,
         pose: primary.pose,
+        measurementPose: primary.measurementPose,
+        confidenceWeight: primary.confidenceWeight,
         scores: primary.scores,
         dominant: primary.dominant,
         area: primary.area,
@@ -509,14 +529,14 @@ export default function FacecamHUD() {
   useEffect(() => {
     if (phase !== "live") return;
     const id = setInterval(() => {
-      const { confidence, pose, deepTechScore } = latestPrimaryRef.current;
+      const { hasFace, confidence, pose, deepTechScore } = latestPrimaryRef.current;
       const gaze = gazeDirectionFromPose(pose);
       const focusScore = focusScoreFromPose(pose);
       const tSec = Math.round((Date.now() - sessionStartRef.current) / 1000);
       const sample: SecondSample = {
         tSec,
         atISO: new Date().toISOString(),
-        hasFace: pose != null,
+        hasFace,
         confidence,
         yaw: pose?.yaw ?? null,
         pitch: pose?.pitch ?? null,
@@ -663,8 +683,8 @@ export default function FacecamHUD() {
   const dominant = primary?.dominant ?? "neutral";
   const scores = primary?.scores ?? emptyScores();
   const accent = EMOTION_TOKEN[dominant];
-  const liveGaze = gazeDirectionFromPose(primary?.pose ?? null);
-  const liveFocusScore = focusScoreFromPose(primary?.pose ?? null);
+  const liveGaze = gazeDirectionFromPose(primary?.measurementPose ?? null);
+  const liveFocusScore = focusScoreFromPose(primary?.measurementPose ?? null);
 
   return (
     <div className="stage-light min-h-screen w-full">

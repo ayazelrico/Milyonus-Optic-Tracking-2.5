@@ -19,6 +19,22 @@ export type Scores = Record<Emotion, number>;
 export const emptyScores = (): Scores =>
   EMOTIONS.reduce((acc, e) => ({ ...acc, [e]: 0 }), {} as Scores);
 
+/** Reduces uncertain expression evidence while preserving a neutral floor. */
+export function scoresFromConfidence(scores: Scores, weight: number): Scores {
+  const safeWeight = Math.min(1, Math.max(0, weight));
+  return {
+    ...scores,
+    smile: scores.smile * safeWeight,
+    sad: scores.sad * safeWeight,
+    angry: scores.angry * safeWeight,
+    surprised: scores.surprised * safeWeight,
+    fearful: scores.fearful * safeWeight,
+    disgusted: scores.disgusted * safeWeight,
+    thinking: scores.thinking * safeWeight,
+    neutral: Math.max(scores.neutral, 1 - safeWeight),
+  };
+}
+
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
 
 /**

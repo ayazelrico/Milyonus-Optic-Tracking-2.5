@@ -47,3 +47,15 @@
 - **Metric:** `MIN_POSE_ALPHA = 0.15`; `MAX_POSE_ALPHA = 0.7`; `MOTION_ALPHA_GAIN = 0.025`; runtime alpha is exposed per reading.
 - **Regression:** Production build passed. Camera motion behavior, focus transitions, and alpha distribution require manual validation.
 - **Next action:** Capture stationary, slow-turn, and fast-turn sessions; compare jitter, raw-to-smoothed lag, focus transitions, and observed alpha values before changing the bounds. Proceed to Day 5 confidence filtering afterward.
+
+## Day 5 — Confidence Filtering
+
+- **Date:** 2026-10-01
+- **Feature:** Confidence-weighted pose, gaze, focus, and expression measurements
+- **Problem:** Detector confidence was displayed and recorded but did not reduce the influence of uncertain detections on downstream attention and expression metrics.
+- **Change:** Added a confidence weight: detections below `0.30` are rejected from gaze and focus calculations; `0.30–0.75` detections are pulled toward neutral and receive proportional expression suppression; `>=0.75` detections receive full weight. Raw smoothed pose remains available for diagnostics.
+- **Expected improvement:** Reduce false gaze transitions, unstable focus scores, and overconfident expression labels when the detector is uncertain.
+- **Actual result:** The confidence-filtered path compiled successfully in the production build. No real-camera low-confidence sequence was available, so behavior under occlusion or poor lighting remains unmeasured.
+- **Metric:** `LOW_CONFIDENCE_CUTOFF = 0.30`; `FULL_CONFIDENCE_THRESHOLD = 0.75`; intermediate pose and expression weight is linearly scaled.
+- **Regression:** Production build passed. Manual validation is still required for partial occlusion, low light, glasses, and face-at-edge scenarios.
+- **Next action:** Run controlled low-confidence camera scenarios and compare rejected frames, gaze switching, focus stability, and expression false positives. Proceed to Day 6 face-detection stability afterward.
