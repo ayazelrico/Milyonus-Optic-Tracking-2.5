@@ -5,6 +5,34 @@ export interface TrackBox {
   h: number;
 }
 
+export interface DetectionStabilityFrame {
+  landmarkFaceCount: number;
+  detectorFaceCount: number;
+  matchedCount: number;
+  candidateDetectorMisses: number;
+  candidateUnmatchedDetections: number;
+}
+
+/**
+ * Records agreement between the landmark model and the independent detector.
+ * These are candidate misses/unmatched detections, not ground-truth labels.
+ */
+export class DetectionStabilityTracker {
+  observe(
+    landmarkFaceCount: number,
+    detectorFaceCount: number,
+    matchedCount: number,
+  ): DetectionStabilityFrame {
+    return {
+      landmarkFaceCount,
+      detectorFaceCount,
+      matchedCount,
+      candidateDetectorMisses: Math.max(0, landmarkFaceCount - matchedCount),
+      candidateUnmatchedDetections: Math.max(0, detectorFaceCount - matchedCount),
+    };
+  }
+}
+
 interface Track extends TrackBox {
   id: number;
   lastSeen: number;

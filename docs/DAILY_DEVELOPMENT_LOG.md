@@ -59,3 +59,15 @@
 - **Metric:** `LOW_CONFIDENCE_CUTOFF = 0.30`; `FULL_CONFIDENCE_THRESHOLD = 0.75`; intermediate pose and expression weight is linearly scaled.
 - **Regression:** Production build passed. Manual validation is still required for partial occlusion, low light, glasses, and face-at-edge scenarios.
 - **Next action:** Run controlled low-confidence camera scenarios and compare rejected frames, gaze switching, focus stability, and expression false positives. Proceed to Day 6 face-detection stability afterward.
+
+## Day 6 — Face Detection Stability
+
+- **Date:** 2026-10-02
+- **Feature:** Per-frame detector agreement telemetry
+- **Problem:** The landmark model and independent face detector were matched for confidence, but their disagreements were not preserved for later stability analysis.
+- **Change:** Added per-frame telemetry containing landmark face count, detector face count, matched count, candidate detector misses, and candidate unmatched detections. The data is written to the existing high-resolution recorder for every frame, including frames with no detected face.
+- **Expected improvement:** Make edge-of-frame, turned-away, distant, and partially occluded detection behavior measurable without confusing model disagreement with ground-truth false positives or false negatives.
+- **Actual result:** The telemetry path compiled successfully in the production build. No real-camera scenario was available, so candidate miss rates remain unmeasured.
+- **Metric:** `candidateDetectorMisses = landmarkFaceCount - matchedCount`; `candidateUnmatchedDetections = detectorFaceCount - matchedCount`, both clamped at zero per frame.
+- **Regression:** Production build passed. Ground-truth accuracy and scenario-specific detection stability require manual camera validation.
+- **Next action:** Run controlled edge, turned, distant, and occluded-face sessions; aggregate candidate miss rates and compare them under identical conditions. Proceed to Day 7 track-ID stability afterward.

@@ -8,7 +8,7 @@ import {
 } from "@mediapipe/tasks-vision";
 import MilyonusMark from "@/components/MilyonusMark";
 import { poseFromTransformMatrix, type HeadPose } from "@/lib/facePose";
-import { FaceTracker } from "@/lib/faceTracker";
+import { DetectionStabilityTracker, FaceTracker } from "@/lib/faceTracker";
 import {
   EMOTIONS,
   dominantEmotion,
@@ -201,6 +201,7 @@ export default function FacecamHUD() {
   const fpsRef = useRef<{ last: number; frames: number }>({ last: 0, frames: 0 });
   const mutedRef = useRef(false);
   const trackerRef = useRef(new FaceTracker());
+  const detectionStabilityRef = useRef(new DetectionStabilityTracker());
   const landmarkerRef = useRef<FaceLandmarker | null>(null);
   const detectorRef = useRef<FaceDetector | null>(null);
   const drawingUtilsRef = useRef<DrawingUtils | null>(null);
@@ -363,6 +364,11 @@ export default function FacecamHUD() {
       usedDet.add(bestI);
       return detections[bestI]!.categories[0]?.score ?? null;
     });
+    const detectionStability = detectionStabilityRef.current.observe(
+      faceLandmarks.length,
+      detections.length,
+      usedDet.size,
+    );
 
     // Mirror the mesh/graphics layer to match the mirrored <video>, then draw
     // text labels unflipped afterwards so they stay readable.
@@ -485,20 +491,19 @@ export default function FacecamHUD() {
       deepTechScore,
     };
 
-    // Background High-Res Recording (Every Frame)
-    if (primary) {
-      recorder.record({
-        id: primary.id,
-        confidence: primary.confidence,
-        pose: primary.pose,
-        measurementPose: primary.measurementPose,
-        confidenceWeight: primary.confidenceWeight,
-        scores: primary.scores,
-        dominant: primary.dominant,
-        area: primary.area,
-        deepTechScore,
-      });
-    }
+    // Background High-Res Recording (Every Frame), including no-face frames.
+    recorder.record({
+      id: primary?.id ?? null,
+      confidence: primary?.confidence ?? null,
+      pose: primary?.pose ?? null,
+      measurementPose: primary?.measurementPose ?? null,
+      confidenceWeight: primary?.confidenceWeight ?? 0,
+      detectionStability,
+      scores: primary?.scores ?? emptyScores(),
+      dominant: primary?.dominant ?? "neutral",
+      area: primary?.area ?? 0,
+      deepTechScore,
+    });
 
     if (primary) {
       const conf = primary.scores[primary.dominant];
