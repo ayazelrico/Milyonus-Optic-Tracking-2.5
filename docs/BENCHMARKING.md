@@ -65,6 +65,10 @@ Downstream measurements use detector confidence as an evidence weight. Confidenc
 
 High-resolution telemetry now records agreement between the landmark model and the independent face detector for every frame: landmark face count, detector face count, matched count, candidate detector misses, and candidate unmatched detections. These counters are diagnostic candidates rather than false-positive or false-negative ground truth. Run separate controlled sessions for edge-of-frame, turned-away, distant, and partially occluded faces, then compare the candidate miss rates under the same camera and lighting conditions.
 
+## 8. Track-ID stability
+
+The tracker records observed faces, retained matches, newly created tracks, unmatched previous tracks, and active tracks for every frame. Use these fields to calculate ID churn during fast head movement, two-person crossing, exit/re-entry, and face-intersection scenarios. A new track is an observable continuity break, not proof of an identity switch; identity claims require labeled video review.
+
 ## Metrics
 
 When the exported CSV contains the relevant columns, the report calculates:
@@ -81,6 +85,7 @@ When the exported CSV contains the relevant columns, the report calculates:
 - Production build duration and status
 - Landmark jitter: mean, p95, and maximum normalized displacement
 - Candidate detector misses and unmatched detections per frame
+- Retained, new, unmatched-previous, and active track counts per frame
 
 The current application export is expected to provide fields such as `second`, `timestamp`, `has_face`, `confidence`, `yaw_deg`, `pitch_deg`, `gaze`, and `focus_score`. Runtime instrumentation fields such as `fps`, `inference_latency_ms`, `cpu_percent`, `memory_mb`, and `track_id` are consumed automatically when they are added to the export schema.
 

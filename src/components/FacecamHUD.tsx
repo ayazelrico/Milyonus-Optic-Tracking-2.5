@@ -334,6 +334,7 @@ export default function FacecamHUD() {
       })),
       now,
     );
+    const trackStability = trackerRef.current.getLastStats();
 
     const smoothedLandmarks = faceLandmarks.map((pts, i) =>
       processorRef.current.smooth(trackIds[i], pts)
@@ -499,6 +500,7 @@ export default function FacecamHUD() {
       measurementPose: primary?.measurementPose ?? null,
       confidenceWeight: primary?.confidenceWeight ?? 0,
       detectionStability,
+      trackStability,
       scores: primary?.scores ?? emptyScores(),
       dominant: primary?.dominant ?? "neutral",
       area: primary?.area ?? 0,

@@ -33,6 +33,14 @@ export class DetectionStabilityTracker {
   }
 }
 
+export interface TrackStabilityFrame {
+  observedCount: number;
+  retainedTrackCount: number;
+  newTrackCount: number;
+  unmatchedPreviousTrackCount: number;
+  activeTrackCount: number;
+}
+
 interface Track extends TrackBox {
   id: number;
   lastSeen: number;
@@ -47,6 +55,13 @@ interface Track extends TrackBox {
 export class FaceTracker {
   private tracks: Track[] = [];
   private nextId = 1;
+  private latestStats: TrackStabilityFrame = {
+    observedCount: 0,
+    retainedTrackCount: 0,
+    newTrackCount: 0,
+    unmatchedPreviousTrackCount: 0,
+    activeTrackCount: 0,
+  };
 
   constructor(
     private readonly maxAgeMs = 600,
@@ -55,6 +70,7 @@ export class FaceTracker {
 
   /** Returns a track ID per input box, in the same order as `boxes`. */
   update(boxes: readonly TrackBox[], now: number): number[] {
+    const previousTrackCount = this.tracks.length;
     const ids = new Array<number>(boxes.length).fill(-1);
     const candidates: Array<{ bi: number; ti: number; dist: number }> = [];
 
@@ -93,11 +109,29 @@ export class FaceTracker {
     });
 
     this.tracks = this.tracks.filter((t) => now - t.lastSeen <= this.maxAgeMs);
+    this.latestStats = {
+      observedCount: boxes.length,
+      retainedTrackCount: usedTracks.size,
+      newTrackCount: boxes.length - usedBoxes.size,
+      unmatchedPreviousTrackCount: Math.max(0, previousTrackCount - usedTracks.size),
+      activeTrackCount: this.tracks.length,
+    };
     return ids;
+  }
+
+  getLastStats(): TrackStabilityFrame {
+    return { ...this.latestStats };
   }
 
   reset() {
     this.tracks = [];
     this.nextId = 1;
+    this.latestStats = {
+      observedCount: 0,
+      retainedTrackCount: 0,
+      newTrackCount: 0,
+      unmatchedPreviousTrackCount: 0,
+      activeTrackCount: 0,
+    };
   }
 }

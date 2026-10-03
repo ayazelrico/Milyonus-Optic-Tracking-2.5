@@ -71,3 +71,15 @@
 - **Metric:** `candidateDetectorMisses = landmarkFaceCount - matchedCount`; `candidateUnmatchedDetections = detectorFaceCount - matchedCount`, both clamped at zero per frame.
 - **Regression:** Production build passed. Ground-truth accuracy and scenario-specific detection stability require manual camera validation.
 - **Next action:** Run controlled edge, turned, distant, and occluded-face sessions; aggregate candidate miss rates and compare them under identical conditions. Proceed to Day 7 track-ID stability afterward.
+
+## Day 7 — Track-ID Stability
+
+- **Date:** 2026-10-03
+- **Feature:** Per-frame track continuity telemetry
+- **Problem:** The greedy tracker assigned IDs, but continuity breaks were not separately observable during fast movement, multi-person crossings, exit/re-entry, or face intersections.
+- **Change:** Added tracker statistics for observed faces, retained matches, newly created tracks, unmatched previous tracks, and active tracks. These statistics are recorded for every high-resolution frame, including no-face frames.
+- **Expected improvement:** Make ID churn measurable before changing matching thresholds or introducing a more complex tracker.
+- **Actual result:** The telemetry path compiled successfully in the production build. No labeled or real-camera sequence was available, so ID continuity rates remain unmeasured.
+- **Metric:** `newTrackCount` is an observable continuity break candidate; `retainedTrackCount`, `unmatchedPreviousTrackCount`, and `activeTrackCount` describe tracker state per frame.
+- **Regression:** Production build passed. A new track is not treated as proof of an identity switch; labeled video review is required for that claim.
+- **Next action:** Run fast-head-motion, two-person crossing, exit/re-entry, and face-intersection sessions; compare new-track and retained-track rates before tuning the tracker. Proceed to Day 8 occlusion handling afterward.
