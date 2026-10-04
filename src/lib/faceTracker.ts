@@ -38,19 +38,23 @@ export interface TrackStabilityFrame {
   retainedTrackCount: number;
   newTrackCount: number;
   unmatchedPreviousTrackCount: number;
+  occlusionReacquiredCount: number;
   activeTrackCount: number;
 }
 
 interface Track extends TrackBox {
   id: number;
   lastSeen: number;
+  vx: number;
+  vy: number;
 }
 
 /**
  * Minimal greedy nearest-centroid tracker. MediaPipe's FaceLandmarker does not
  * expose a persistent face ID across frames (its per-face landmark smoothing
  * only holds for numFaces:1), so this assigns stable IDs by matching each
- * frame's detected boxes to the closest track from the previous frame.
+ * frame's detected boxes to the closest recent track, using short-term motion
+ * prediction when the previous observation was briefly occluded.
  */
 export class FaceTracker {
   private tracks: Track[] = [];
@@ -60,6 +64,7 @@ export class FaceTracker {
     retainedTrackCount: 0,
     newTrackCount: 0,
     unmatchedPreviousTrackCount: 0,
+    occlusionReacquiredCount: 0,
     activeTrackCount: 0,
   };
 
@@ -76,7 +81,11 @@ export class FaceTracker {
 
     boxes.forEach((b, bi) => {
       this.tracks.forEach((t, ti) => {
-        const dist = Math.hypot(b.cx - t.cx, b.cy - t.cy);
+        const elapsedMs = Math.max(0, now - t.lastSeen);
+        if (elapsedMs > this.maxAgeMs) return;
+        const predictedCx = t.cx + t.vx * elapsedMs;
+        const predictedCy = t.cy + t.vy * elapsedMs;
+        const dist = Math.hypot(b.cx - predictedCx, b.cy - predictedCy);
         const sizeRef = Math.max(b.w, b.h, t.w, t.h, 1);
         if (dist / sizeRef <= this.maxDistRatio) {
           candidates.push({ bi, ti, dist });
@@ -87,24 +96,32 @@ export class FaceTracker {
 
     const usedBoxes = new Set<number>();
     const usedTracks = new Set<number>();
+    let reacquiredTrackCount = 0;
     for (const c of candidates) {
       if (usedBoxes.has(c.bi) || usedTracks.has(c.ti)) continue;
       usedBoxes.add(c.bi);
       usedTracks.add(c.ti);
       const t = this.tracks[c.ti]!;
       const b = boxes[c.bi]!;
+      const elapsedMs = Math.max(now - t.lastSeen, 1);
+      const observedVx = (b.cx - t.cx) / elapsedMs;
+      const observedVy = (b.cy - t.cy) / elapsedMs;
+      const wasOccluded = elapsedMs > 50;
+      t.vx = t.vx * 0.5 + observedVx * 0.5;
+      t.vy = t.vy * 0.5 + observedVy * 0.5;
       t.cx = b.cx;
       t.cy = b.cy;
       t.w = b.w;
       t.h = b.h;
       t.lastSeen = now;
       ids[c.bi] = t.id;
+      if (wasOccluded) reacquiredTrackCount += 1;
     }
 
     boxes.forEach((b, bi) => {
       if (ids[bi] !== -1) return;
       const id = this.nextId++;
-      this.tracks.push({ id, cx: b.cx, cy: b.cy, w: b.w, h: b.h, lastSeen: now });
+      this.tracks.push({ id, cx: b.cx, cy: b.cy, w: b.w, h: b.h, lastSeen: now, vx: 0, vy: 0 });
       ids[bi] = id;
     });
 
@@ -114,6 +131,7 @@ export class FaceTracker {
       retainedTrackCount: usedTracks.size,
       newTrackCount: boxes.length - usedBoxes.size,
       unmatchedPreviousTrackCount: Math.max(0, previousTrackCount - usedTracks.size),
+      occlusionReacquiredCount: reacquiredTrackCount,
       activeTrackCount: this.tracks.length,
     };
     return ids;
@@ -131,6 +149,7 @@ export class FaceTracker {
       retainedTrackCount: 0,
       newTrackCount: 0,
       unmatchedPreviousTrackCount: 0,
+      occlusionReacquiredCount: 0,
       activeTrackCount: 0,
     };
   }

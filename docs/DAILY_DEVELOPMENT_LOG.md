@@ -83,3 +83,15 @@
 - **Metric:** `newTrackCount` is an observable continuity break candidate; `retainedTrackCount`, `unmatchedPreviousTrackCount`, and `activeTrackCount` describe tracker state per frame.
 - **Regression:** Production build passed. A new track is not treated as proof of an identity switch; labeled video review is required for that claim.
 - **Next action:** Run fast-head-motion, two-person crossing, exit/re-entry, and face-intersection sessions; compare new-track and retained-track rates before tuning the tracker. Proceed to Day 8 occlusion handling afterward.
+
+## Day 8 — Occlusion Handling
+
+- **Date:** 2026-10-04
+- **Feature:** Short-term constant-velocity track prediction
+- **Problem:** During a brief partial occlusion, matching against the last observed center alone could reject the returning face after it moved, causing an avoidable new track ID.
+- **Change:** Each track now maintains a smoothed center velocity and predicts its center across the missing interval before applying the existing distance gate. Matches after gaps longer than `50 ms` are counted as occlusion reacquisitions; the existing `600 ms` lifetime remains unchanged.
+- **Expected improvement:** Preserve the same track ID across short occlusions without extending track lifetime or accepting arbitrarily distant matches.
+- **Actual result:** The prediction and reacquisition telemetry path compiled successfully in the production build. No real-camera occlusion sequence was available, so ID preservation improvement remains unmeasured.
+- **Metric:** `occlusionReacquiredCount` per frame; prediction is bounded by the existing `maxDistRatio = 0.85` and `maxAgeMs = 600` defaults.
+- **Regression:** Production build passed. Fast motion, crossing faces, partial occlusion, and long disappearance require manual validation.
+- **Next action:** Run controlled partial-occlusion and moving-face sessions; compare reacquisition and new-track rates against Day 7 telemetry before adjusting prediction or grace-window parameters. Proceed to Day 9 blink detection afterward.
