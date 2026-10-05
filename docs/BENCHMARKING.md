@@ -71,6 +71,10 @@ The tracker records observed faces, retained matches, newly created tracks, unma
 
 For short occlusions, each track now predicts its next center using a bounded constant-velocity estimate before applying the existing distance gate. A match after a gap greater than `50 ms` is recorded as `occlusionReacquiredCount`. The existing `600 ms` track lifetime remains the hard grace window; longer gaps still create a new track.
 
+## 9. Blink detection
+
+The runtime computes left and right Eye Aspect Ratio (EAR) from landmarks for each track. A blink starts when the mean EAR falls below `0.18` and completes when it rises above `0.21`. Valid closures must last `50–500 ms`; completed events expose start time, duration, cumulative count, and a rolling one-minute frequency. Low-confidence frames do not advance blink state.
+
 ## Metrics
 
 When the exported CSV contains the relevant columns, the report calculates:
@@ -89,6 +93,7 @@ When the exported CSV contains the relevant columns, the report calculates:
 - Candidate detector misses and unmatched detections per frame
 - Retained, new, unmatched-previous, and active track counts per frame
 - Occlusion reacquisition count per frame
+- Left/right EAR, blink start, duration, count, and rolling frequency
 
 The current application export is expected to provide fields such as `second`, `timestamp`, `has_face`, `confidence`, `yaw_deg`, `pitch_deg`, `gaze`, and `focus_score`. Runtime instrumentation fields such as `fps`, `inference_latency_ms`, `cpu_percent`, `memory_mb`, and `track_id` are consumed automatically when they are added to the export schema.
 

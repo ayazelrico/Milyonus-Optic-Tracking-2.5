@@ -95,3 +95,15 @@
 - **Metric:** `occlusionReacquiredCount` per frame; prediction is bounded by the existing `maxDistRatio = 0.85` and `maxAgeMs = 600` defaults.
 - **Regression:** Production build passed. Fast motion, crossing faces, partial occlusion, and long disappearance require manual validation.
 - **Next action:** Run controlled partial-occlusion and moving-face sessions; compare reacquisition and new-track rates against Day 7 telemetry before adjusting prediction or grace-window parameters. Proceed to Day 9 blink detection afterward.
+
+## Day 9 — Blink Detection
+
+- **Date:** 2026-10-05
+- **Feature:** Per-track EAR blink events and rolling blink frequency
+- **Problem:** The application calculated EAR for display but did not convert the signal into time-bounded blink events or a frequency metric.
+- **Change:** Added a per-track blink state machine. Blink start occurs below mean EAR `0.18`; completion occurs above `0.21` after a valid `50–500 ms` closure. Each event records start state, duration, cumulative count, and rolling one-minute frequency. Confidence-weight `0` frames do not advance state.
+- **Expected improvement:** Provide a reproducible blink event signal while avoiding single-frame noise and low-confidence false events.
+- **Actual result:** The blink telemetry path compiled successfully in the production build. No real-camera blink sequence was available, so precision, recall, duration accuracy, and frequency remain unmeasured. The optional local TypeScript fixture was not run because the repository does not include a local `esbuild` binary and `npx` requested an unapproved package installation.
+- **Metric:** Left/right EAR, `blinkStartedAt`, `blinkDurationMs`, `blinkCount`, and `blinkFrequencyPerMinute` are recorded per primary face frame.
+- **Regression:** Production build passed. Lighting, glasses, partial occlusion, and rapid repeated blinks require manual validation.
+- **Next action:** Capture labeled open/closed-eye sequences and compare event timing, duration, and rolling frequency; proceed to Day 10 eye-openness metrics afterward.
