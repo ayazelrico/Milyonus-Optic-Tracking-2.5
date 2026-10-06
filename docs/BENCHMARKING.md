@@ -75,6 +75,10 @@ For short occlusions, each track now predicts its next center using a bounded co
 
 The runtime computes left and right Eye Aspect Ratio (EAR) from landmarks for each track. A blink starts when the mean EAR falls below `0.18` and completes when it rises above `0.21`. Valid closures must last `50–500 ms`; completed events expose start time, duration, cumulative count, and a rolling one-minute frequency. Low-confidence frames do not advance blink state.
 
+## 10. Eye openness
+
+Each blink frame now exposes `leftEyeOpen`, `rightEyeOpen`, and their mean `eyeOpenness`, using the corresponding EAR values when confidence weight is above zero. Low-confidence frames preserve raw EAR diagnostics but set the openness fields to `null`; `confidenceWeight` identifies the usable evidence level.
+
 ## Metrics
 
 When the exported CSV contains the relevant columns, the report calculates:
@@ -94,6 +98,7 @@ When the exported CSV contains the relevant columns, the report calculates:
 - Retained, new, unmatched-previous, and active track counts per frame
 - Occlusion reacquisition count per frame
 - Left/right EAR, blink start, duration, count, and rolling frequency
+- Left/right eye openness and mean eye openness
 
 The current application export is expected to provide fields such as `second`, `timestamp`, `has_face`, `confidence`, `yaw_deg`, `pitch_deg`, `gaze`, and `focus_score`. Runtime instrumentation fields such as `fps`, `inference_latency_ms`, `cpu_percent`, `memory_mb`, and `track_id` are consumed automatically when they are added to the export schema.
 

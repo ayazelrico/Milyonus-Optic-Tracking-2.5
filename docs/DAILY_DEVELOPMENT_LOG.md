@@ -107,3 +107,15 @@
 - **Metric:** Left/right EAR, `blinkStartedAt`, `blinkDurationMs`, `blinkCount`, and `blinkFrequencyPerMinute` are recorded per primary face frame.
 - **Regression:** Production build passed. Lighting, glasses, partial occlusion, and rapid repeated blinks require manual validation.
 - **Next action:** Capture labeled open/closed-eye sequences and compare event timing, duration, and rolling frequency; proceed to Day 10 eye-openness metrics afterward.
+
+## Day 10 — Eye Openness
+
+- **Date:** 2026-10-06
+- **Feature:** Separate left/right eye openness telemetry
+- **Problem:** EAR was available for blink detection, but the application did not expose independent left-eye, right-eye, or mean eye-openness values.
+- **Change:** Added `leftEyeOpen`, `rightEyeOpen`, and `eyeOpenness` to each blink frame. These fields use the corresponding EAR values when confidence weight is usable; low-confidence frames preserve raw EAR diagnostics but return `null` openness fields.
+- **Expected improvement:** Make asymmetric eye closure, gradual eye opening, and per-eye blink quality measurable without conflating the two eyes.
+- **Actual result:** The eye-openness telemetry path compiled successfully in the production build. No real-camera eye sequence was available, so openness calibration and accuracy remain unmeasured.
+- **Metric:** Left EAR, right EAR, mean `eyeOpenness`, and `confidenceWeight` are recorded per tracked face frame.
+- **Regression:** Production build passed. Glasses, head rotation, partial occlusion, and left/right landmark asymmetry require manual validation.
+- **Next action:** Capture controlled open, closed, asymmetric, and head-rotated eye sequences; compare left/right openness traces before proceeding to Day 11 eye symmetry.

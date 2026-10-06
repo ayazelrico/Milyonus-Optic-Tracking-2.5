@@ -1,6 +1,10 @@
 export interface BlinkFrame {
   leftEAR: number;
   rightEAR: number;
+  leftEyeOpen: number | null;
+  rightEyeOpen: number | null;
+  eyeOpenness: number | null;
+  confidenceWeight: number;
   eyeClosed: boolean;
   blinkStartedAt: number | null;
   blinkDurationMs: number | null;
@@ -58,6 +62,10 @@ export class BlinkTracker {
     return {
       leftEAR,
       rightEAR,
+      leftEyeOpen: weight > 0 ? leftEAR : null,
+      rightEyeOpen: weight > 0 ? rightEAR : null,
+      eyeOpenness: weight > 0 ? (leftEAR + rightEAR) / 2 : null,
+      confidenceWeight: weight,
       eyeClosed,
       blinkStartedAt,
       blinkDurationMs,
