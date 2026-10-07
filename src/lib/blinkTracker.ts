@@ -4,6 +4,8 @@ export interface BlinkFrame {
   leftEyeOpen: number | null;
   rightEyeOpen: number | null;
   eyeOpenness: number | null;
+  eyeSymmetryDifference: number | null;
+  eyeSymmetryScore: number | null;
   confidenceWeight: number;
   eyeClosed: boolean;
   blinkStartedAt: number | null;
@@ -35,16 +37,20 @@ export class BlinkTracker {
     now: number,
     confidenceWeight: number,
   ): BlinkFrame {
-    const state = this.states.get(trackId) ?? { closedSince: null, blinkTimes: [], blinkCount: 0 };
-    const eyeClosed = (leftEAR + rightEAR) / 2 < CLOSE_THRESHOLD;
     const weight = Math.min(1, Math.max(0, confidenceWeight));
+    const state = this.states.get(trackId) ?? { closedSince: null, blinkTimes: [], blinkCount: 0 };
+    const meanEAR = (leftEAR + rightEAR) / 2;
+    const eyeClosed = meanEAR < CLOSE_THRESHOLD;
+    const eyeSymmetryDifference = weight > 0
+      ? Math.min(1, Math.abs(leftEAR - rightEAR) / Math.max(meanEAR, 0.001))
+      : null;
     let blinkDurationMs: number | null = null;
     let blinkStartedAt: number | null = state.closedSince;
 
     if (weight > 0 && eyeClosed && state.closedSince == null) {
       state.closedSince = now;
       blinkStartedAt = now;
-    } else if (weight > 0 && state.closedSince != null && (leftEAR + rightEAR) / 2 > OPEN_THRESHOLD) {
+    } else if (weight > 0 && state.closedSince != null && meanEAR > OPEN_THRESHOLD) {
       const duration = now - state.closedSince;
       blinkStartedAt = state.closedSince;
       if (duration >= MIN_BLINK_DURATION_MS && duration <= MAX_BLINK_DURATION_MS) {
@@ -64,7 +70,9 @@ export class BlinkTracker {
       rightEAR,
       leftEyeOpen: weight > 0 ? leftEAR : null,
       rightEyeOpen: weight > 0 ? rightEAR : null,
-      eyeOpenness: weight > 0 ? (leftEAR + rightEAR) / 2 : null,
+      eyeOpenness: weight > 0 ? meanEAR : null,
+      eyeSymmetryDifference,
+      eyeSymmetryScore: eyeSymmetryDifference == null ? null : 1 - eyeSymmetryDifference,
       confidenceWeight: weight,
       eyeClosed,
       blinkStartedAt,

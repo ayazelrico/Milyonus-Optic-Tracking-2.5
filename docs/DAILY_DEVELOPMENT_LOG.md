@@ -119,3 +119,15 @@
 - **Metric:** Left EAR, right EAR, mean `eyeOpenness`, and `confidenceWeight` are recorded per tracked face frame.
 - **Regression:** Production build passed. Glasses, head rotation, partial occlusion, and left/right landmark asymmetry require manual validation.
 - **Next action:** Capture controlled open, closed, asymmetric, and head-rotated eye sequences; compare left/right openness traces before proceeding to Day 11 eye symmetry.
+
+## Day 11 — Eye Symmetry
+
+- **Date:** 2026-10-07
+- **Feature:** Normalized left/right eye symmetry metrics
+- **Problem:** Separate eye-openness values were available, but camera angle and landmark noise could not be summarized as a scale-independent asymmetry signal.
+- **Change:** Added `eyeSymmetryDifference = abs(leftEAR - rightEAR) / max(meanEAR, 0.001)`, clamped to `[0, 1]`, and the complementary `eyeSymmetryScore = 1 - difference`. Both fields are `null` when confidence weight is zero.
+- **Expected improvement:** Make left/right landmark disagreement measurable across different face sizes and distinguish raw asymmetry from a normalized stability score.
+- **Actual result:** The symmetry telemetry path compiled successfully in the production build. No real-camera angle or landmark-noise sequence was available, so calibration and accuracy remain unmeasured.
+- **Metric:** `eyeSymmetryDifference` in `[0, 1]`; `eyeSymmetryScore` in `[0, 1]`; low-confidence frames are excluded.
+- **Regression:** Production build passed. Head rotation, asymmetric blinking, glasses, and partial occlusion require manual validation.
+- **Next action:** Capture frontal, rotated, asymmetric-blink, and occluded-eye sequences; compare symmetry against labeled conditions before proceeding to Day 12 head movement intensity.

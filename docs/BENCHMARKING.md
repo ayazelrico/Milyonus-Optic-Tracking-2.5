@@ -79,6 +79,10 @@ The runtime computes left and right Eye Aspect Ratio (EAR) from landmarks for ea
 
 Each blink frame now exposes `leftEyeOpen`, `rightEyeOpen`, and their mean `eyeOpenness`, using the corresponding EAR values when confidence weight is above zero. Low-confidence frames preserve raw EAR diagnostics but set the openness fields to `null`; `confidenceWeight` identifies the usable evidence level.
 
+## 11. Eye symmetry
+
+Eye asymmetry is normalized against mean EAR as `abs(leftEAR - rightEAR) / max(meanEAR, 0.001)`, clamped to `[0, 1]`. The result is exposed as `eyeSymmetryDifference`; `eyeSymmetryScore = 1 - difference` provides an easy-to-read `[0, 1]` stability score. Both fields are `null` when confidence weight is zero.
+
 ## Metrics
 
 When the exported CSV contains the relevant columns, the report calculates:
@@ -99,6 +103,7 @@ When the exported CSV contains the relevant columns, the report calculates:
 - Occlusion reacquisition count per frame
 - Left/right EAR, blink start, duration, count, and rolling frequency
 - Left/right eye openness and mean eye openness
+- Normalized eye symmetry difference and symmetry score
 
 The current application export is expected to provide fields such as `second`, `timestamp`, `has_face`, `confidence`, `yaw_deg`, `pitch_deg`, `gaze`, and `focus_score`. Runtime instrumentation fields such as `fps`, `inference_latency_ms`, `cpu_percent`, `memory_mb`, and `track_id` are consumed automatically when they are added to the export schema.
 
