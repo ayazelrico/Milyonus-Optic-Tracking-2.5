@@ -33,6 +33,7 @@ import { calculateDeepTechScore } from "@/lib/deepTech";
 import { recorder } from "@/lib/recorder";
 import { LandmarkProcessor } from "@/lib/landmarkProcessor";
 import { BlinkTracker, type BlinkFrame } from "@/lib/blinkTracker";
+import { HeadMovementTracker, type HeadMovementFrame } from "@/lib/headMovement";
 
 const TASKS_VISION_VERSION = "1.0.1";
 const WASM_BASE = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${TASKS_VISION_VERSION}/wasm`;
@@ -88,6 +89,7 @@ interface FaceReading {
   measurementPose: HeadPose | null;
   confidenceWeight: number;
   blink: BlinkFrame;
+  headMovement: HeadMovementFrame;
   scores: Scores;
   dominant: Emotion;
   box: PixelBox;
@@ -209,6 +211,7 @@ export default function FacecamHUD() {
   const drawingUtilsRef = useRef<DrawingUtils | null>(null);
   const processorRef = useRef(new LandmarkProcessor());
   const blinkTrackerRef = useRef(new BlinkTracker());
+  const headMovementRef = useRef(new HeadMovementTracker());
   const lastFaceCountRef = useRef(0);
   const latestPrimaryRef = useRef<{
     hasFace: boolean;
@@ -393,6 +396,7 @@ export default function FacecamHUD() {
       const confidence = confidences[i] ?? null;
       const measurementPose = poseFromConfidence(pose, confidence);
       const weight = confidenceWeight(confidence);
+      const headMovement = headMovementRef.current.update(trackIds[i]!, pose, now, weight);
       const blink = blinkTrackerRef.current.update(
         trackIds[i]!,
         processorRef.current.calculateEAR(pts, "left"),
@@ -456,6 +460,7 @@ export default function FacecamHUD() {
         measurementPose,
         confidenceWeight: weight,
         blink,
+        headMovement,
         scores,
         dominant,
         box,
@@ -511,6 +516,7 @@ export default function FacecamHUD() {
       measurementPose: primary?.measurementPose ?? null,
       confidenceWeight: primary?.confidenceWeight ?? 0,
       blink: primary?.blink ?? null,
+      headMovement: primary?.headMovement ?? null,
       detectionStability,
       trackStability,
       scores: primary?.scores ?? emptyScores(),
@@ -660,6 +666,7 @@ export default function FacecamHUD() {
       await video.play();
       trackerRef.current.reset();
       blinkTrackerRef.current.reset();
+      headMovementRef.current.reset();
       lastFaceCountRef.current = 0;
       sessionStartRef.current = Date.now();
       lastGazeAwayLogRef.current = 0;

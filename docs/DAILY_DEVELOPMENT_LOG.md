@@ -131,3 +131,15 @@
 - **Metric:** `eyeSymmetryDifference` in `[0, 1]`; `eyeSymmetryScore` in `[0, 1]`; low-confidence frames are excluded.
 - **Regression:** Production build passed. Head rotation, asymmetric blinking, glasses, and partial occlusion require manual validation.
 - **Next action:** Capture frontal, rotated, asymmetric-blink, and occluded-eye sequences; compare symmetry against labeled conditions before proceeding to Day 12 head movement intensity.
+
+## Day 12 — Head Movement Intensity
+
+- **Date:** 2026-10-08
+- **Feature:** Time-normalized head movement intensity
+- **Problem:** Smoothed pose values were available, but frame-to-frame movement was not exposed as a continuous, frame-rate-aware metric or a low/medium/high band.
+- **Change:** Added a per-track head movement tracker using smoothed yaw, pitch, and roll deltas normalized by elapsed time. Intensity is clamped to `[0, 1]` against `120 deg/s`, with `low < 0.25`, `medium < 0.60`, and `high >= 0.60`. Confidence-zero frames return `null` and do not update state.
+- **Expected improvement:** Quantify stillness versus active head movement while reducing sensitivity to variable frame rates and uncertain detections.
+- **Actual result:** The head movement telemetry path compiled successfully in the production build. No real-camera movement sequence was available, so calibration and band accuracy remain unmeasured.
+- **Metric:** `angularSpeedDegPerSec`, continuous `intensity`, and `level` are recorded per primary face frame.
+- **Regression:** Production build passed. Slow turns, fast turns, nods, shakes, and variable frame-rate behavior require manual validation.
+- **Next action:** Capture labeled slow, medium, fast, nodding, and shaking sequences; compare intensity bands before proceeding to Day 13 motion events.
