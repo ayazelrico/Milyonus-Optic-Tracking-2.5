@@ -1,3 +1,32 @@
+<div align="center">
+
+<img src="docs/assets/milyonus-wordmark-lg.png" alt="Milyonus" width="640" />
+
+**Measure tracking quality. Improve from evidence.**
+
+[Website](https://www.milyonus.com) · [Repository](https://github.com/ayazelrico/Milyonus-Optic-Tracking-2.5)
+
+</div>
+
+---
+
+# Milyonus Optic Tracking 2.5
+
+A React/TypeScript browser tracking project with a reproducible baseline command. The package is version 2.5.0; the v3.0 section below is its forward roadmap, not a declaration that those planned features are complete.
+
+## Quick start
+
+```sh
+git clone https://github.com/ayazelrico/Milyonus-Optic-Tracking-2.5.git
+cd Milyonus-Optic-Tracking-2.5
+bun install --frozen-lockfile
+bun run dev
+```
+
+Open the URL printed by Vite. Use `bun run lint` and `bun run build` for source checks; inspect [scripts/baseline.mjs](scripts/baseline.mjs) and [docs/](docs/) before running `bun run baseline` for measurement. Browser/model prerequisites and baseline results must be checked separately from a successful build. See [package.json](package.json) for commands and [LICENSE](LICENSE) for reuse.
+
+## Development roadmap
+
 # Milyonus Optic Tracking v3.0 — 90-Day Hustle Plan
 
 > **One measurable improvement. Every day. No random feature development.**
