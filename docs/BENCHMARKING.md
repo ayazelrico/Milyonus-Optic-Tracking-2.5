@@ -87,6 +87,10 @@ Eye asymmetry is normalized against mean EAR as `abs(leftEAR - rightEAR) / max(m
 
 Smoothed yaw, pitch, and roll deltas are converted to a time-normalized angular speed. Intensity is `clamp(angularSpeedDegPerSec / 120, 0, 1)` with bands `low < 0.25`, `medium < 0.60`, and `high >= 0.60`. Low-confidence frames return `null` and do not update the previous valid pose sample.
 
+## 13. Motion events
+
+The event engine emits track-scoped `HEAD_TURN`, `HEAD_NOD`, `BLINK`, `FACE_FOUND`, `FACE_LOST`, `GAZE_CHANGE`, and `EXPRESSION_CHANGE` events. Turn and nod detections use smoothed pose deltas with a `500 ms` cooldown; blink events reuse validated blink durations. Events are recorded as an array on each high-resolution telemetry frame. This is event detection telemetry, not labeled ground truth; real-camera sequences are required to measure precision and recall.
+
 ## Metrics
 
 When the exported CSV contains the relevant columns, the report calculates:
@@ -109,6 +113,7 @@ When the exported CSV contains the relevant columns, the report calculates:
 - Left/right eye openness and mean eye openness
 - Normalized eye symmetry difference and symmetry score
 - Angular speed, continuous movement intensity, and low/medium/high movement level
+- Motion event type, track ID, timestamp, and optional transition/duration fields
 
 The current application export is expected to provide fields such as `second`, `timestamp`, `has_face`, `confidence`, `yaw_deg`, `pitch_deg`, `gaze`, and `focus_score`. Runtime instrumentation fields such as `fps`, `inference_latency_ms`, `cpu_percent`, `memory_mb`, and `track_id` are consumed automatically when they are added to the export schema.
 

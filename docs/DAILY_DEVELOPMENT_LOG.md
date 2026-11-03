@@ -143,3 +143,15 @@
 - **Metric:** `angularSpeedDegPerSec`, continuous `intensity`, and `level` are recorded per primary face frame.
 - **Regression:** Production build passed. Slow turns, fast turns, nods, shakes, and variable frame-rate behavior require manual validation.
 - **Next action:** Capture labeled slow, medium, fast, nodding, and shaking sequences; compare intensity bands before proceeding to Day 13 motion events.
+
+## Day 13 — Motion Events
+
+- **Date:** 2026-11-03
+- **Feature:** Track-scoped semantic motion event engine
+- **Problem:** Head movement intensity and blink signals existed independently, but the telemetry stream did not expose discrete head, face-presence, gaze, expression, and blink events.
+- **Change:** Added a debounced event engine that emits `HEAD_TURN`, `HEAD_NOD`, `BLINK`, `FACE_FOUND`, `FACE_LOST`, `GAZE_CHANGE`, and `EXPRESSION_CHANGE`. Turn and nod events use smoothed pose deltas with a `500 ms` cooldown; blink events reuse validated blink duration. Events include track ID and timestamp, with optional transition or duration data.
+- **Expected improvement:** Make temporal behavior queryable as semantic events without changing the underlying continuous measurements.
+- **Actual result:** The event engine and recorder integration compiled successfully in the production build, and the new `motionEvents.ts` file passed targeted ESLint. The repository-wide lint command still fails on 33 pre-existing formatting/type issues in legacy files, so those unrelated files were not reformatted. No real-camera or labeled sequence was available; event precision, recall, and threshold calibration remain unmeasured.
+- **Metric:** Per-frame `events` array containing event type, track ID, timestamp, and optional `from`, `to`, or `durationMs` fields.
+- **Regression:** Production build and `git diff --check` passed; targeted lint passed. Full repository lint remains red due to pre-existing issues. Fast head turns, nods, brief face loss, gaze transitions, expression transitions, and multi-face sessions require manual validation.
+- **Next action:** Capture labeled multi-face and motion sequences; compare emitted events with annotations before proceeding to Day 14 unified signal schema.

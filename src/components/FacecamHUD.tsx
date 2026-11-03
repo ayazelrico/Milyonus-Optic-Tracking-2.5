@@ -34,6 +34,7 @@ import { recorder } from "@/lib/recorder";
 import { LandmarkProcessor } from "@/lib/landmarkProcessor";
 import { BlinkTracker, type BlinkFrame } from "@/lib/blinkTracker";
 import { HeadMovementTracker, type HeadMovementFrame } from "@/lib/headMovement";
+import { MotionEventEngine } from "@/lib/motionEvents";
 
 const TASKS_VISION_VERSION = "1.0.1";
 const WASM_BASE = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${TASKS_VISION_VERSION}/wasm`;
@@ -212,6 +213,7 @@ export default function FacecamHUD() {
   const processorRef = useRef(new LandmarkProcessor());
   const blinkTrackerRef = useRef(new BlinkTracker());
   const headMovementRef = useRef(new HeadMovementTracker());
+  const motionEventEngineRef = useRef(new MotionEventEngine());
   const lastFaceCountRef = useRef(0);
   const latestPrimaryRef = useRef<{
     hasFace: boolean;
@@ -501,6 +503,19 @@ export default function FacecamHUD() {
     const deepTechScore = primary?.measurementPose
       ? calculateDeepTechScore(primary.measurementPose, primary.scores, primary.area, vpe)
       : null;
+    const activeTrackIds = new Set(readings.map((reading) => reading.id));
+    const motionEvents = readings.flatMap((reading) =>
+      motionEventEngineRef.current.update(
+        reading.id,
+        reading.pose,
+        now,
+        gazeDirectionFromPose(reading.measurementPose),
+        reading.dominant,
+        reading.blink,
+        reading.confidenceWeight,
+      ),
+    );
+    motionEvents.push(...motionEventEngineRef.current.observeMissing(activeTrackIds, now));
     latestPrimaryRef.current = {
       hasFace: primary != null,
       confidence: primary?.confidence ?? null,
@@ -517,6 +532,7 @@ export default function FacecamHUD() {
       confidenceWeight: primary?.confidenceWeight ?? 0,
       blink: primary?.blink ?? null,
       headMovement: primary?.headMovement ?? null,
+      events: motionEvents,
       detectionStability,
       trackStability,
       scores: primary?.scores ?? emptyScores(),
@@ -667,6 +683,7 @@ export default function FacecamHUD() {
       trackerRef.current.reset();
       blinkTrackerRef.current.reset();
       headMovementRef.current.reset();
+      motionEventEngineRef.current.reset();
       lastFaceCountRef.current = 0;
       sessionStartRef.current = Date.now();
       lastGazeAwayLogRef.current = 0;
