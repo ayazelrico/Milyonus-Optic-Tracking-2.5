@@ -155,3 +155,15 @@
 - **Metric:** Per-frame `events` array containing event type, track ID, timestamp, and optional `from`, `to`, or `durationMs` fields.
 - **Regression:** Production build and `git diff --check` passed; targeted lint passed. Full repository lint remains red due to pre-existing issues. Fast head turns, nods, brief face loss, gaze transitions, expression transitions, and multi-face sessions require manual validation.
 - **Next action:** Capture labeled multi-face and motion sequences; compare emitted events with annotations before proceeding to Day 14 unified signal schema.
+
+## Day 14 — Unified Signal Object
+
+- **Date:** 2026-11-04
+- **Feature:** Unified per-track signal envelope
+- **Problem:** Pose, eyes, gaze, focus, expression, movement, and events were available as separate recorder fields, making downstream consumers dependent on implementation-specific joins.
+- **Change:** Added `UnifiedSignal` and `createUnifiedSignal`, then recorded a `unifiedSignals` array for every active track. The envelope includes timestamp, track ID, confidence, face presence, landmark count, pose, eyes/blink, gaze, focus, expression, head movement, and track-scoped events. Raw landmark coordinates are intentionally not copied into persistent telemetry.
+- **Expected improvement:** Give analytics and future API consumers one stable schema while preserving existing recorder fields for backward compatibility and limiting sensitive payload duplication.
+- **Actual result:** The unified signal path compiled successfully in the production build, and `unifiedSignal.ts` passed targeted ESLint. No real-camera or exported telemetry sample was available, so live schema serialization remains unverified against captured data.
+- **Metric:** `unifiedSignals` count should equal the number of active tracked faces per frame; each signal contains the documented top-level fields.
+- **Regression:** Existing primary recorder fields remain unchanged. Production build, `git diff --check`, and targeted lint passed. Raw landmark privacy boundary is explicit and requires review in an exported session.
+- **Next action:** Export a multi-face telemetry session, validate schema completeness and serialization, then proceed to Day 15 baseline quality gate.

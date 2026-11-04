@@ -91,6 +91,10 @@ Smoothed yaw, pitch, and roll deltas are converted to a time-normalized angular 
 
 The event engine emits track-scoped `HEAD_TURN`, `HEAD_NOD`, `BLINK`, `FACE_FOUND`, `FACE_LOST`, `GAZE_CHANGE`, and `EXPRESSION_CHANGE` events. Turn and nod detections use smoothed pose deltas with a `500 ms` cooldown; blink events reuse validated blink durations. Events are recorded as an array on each high-resolution telemetry frame. This is event detection telemetry, not labeled ground truth; real-camera sequences are required to measure precision and recall.
 
+## 14. Unified signal object
+
+Each detected track is also represented by a `UnifiedSignal` envelope containing timestamp, track ID, confidence, face presence, pose, eye openness and blink state, gaze, focus, expression scores, head movement, and track-scoped events. To avoid duplicating sensitive high-frequency coordinates in persistent telemetry, `face.landmarks` contains only a landmark count; raw landmark coordinates remain in the live processing path and are not copied into the unified recorder payload.
+
 ## Metrics
 
 When the exported CSV contains the relevant columns, the report calculates:
@@ -114,6 +118,7 @@ When the exported CSV contains the relevant columns, the report calculates:
 - Normalized eye symmetry difference and symmetry score
 - Angular speed, continuous movement intensity, and low/medium/high movement level
 - Motion event type, track ID, timestamp, and optional transition/duration fields
+- Unified per-track signal envelope and schema completeness
 
 The current application export is expected to provide fields such as `second`, `timestamp`, `has_face`, `confidence`, `yaw_deg`, `pitch_deg`, `gaze`, and `focus_score`. Runtime instrumentation fields such as `fps`, `inference_latency_ms`, `cpu_percent`, `memory_mb`, and `track_id` are consumed automatically when they are added to the export schema.
 

@@ -35,6 +35,7 @@ import { LandmarkProcessor } from "@/lib/landmarkProcessor";
 import { BlinkTracker, type BlinkFrame } from "@/lib/blinkTracker";
 import { HeadMovementTracker, type HeadMovementFrame } from "@/lib/headMovement";
 import { MotionEventEngine } from "@/lib/motionEvents";
+import { createUnifiedSignal } from "@/lib/unifiedSignal";
 
 const TASKS_VISION_VERSION = "1.0.1";
 const WASM_BASE = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${TASKS_VISION_VERSION}/wasm`;
@@ -516,6 +517,24 @@ export default function FacecamHUD() {
       ),
     );
     motionEvents.push(...motionEventEngineRef.current.observeMissing(activeTrackIds, now));
+    const unifiedSignals = readings.map((reading) => {
+      const gaze = gazeDirectionFromPose(reading.measurementPose);
+      const focusScore = focusScoreFromPose(reading.measurementPose);
+      return createUnifiedSignal({
+        timestamp: now,
+        trackId: reading.id,
+        confidence: reading.confidence,
+        pose: reading.pose,
+        landmarkCount: reading.landmarkCount,
+        blink: reading.blink,
+        gaze,
+        focusScore,
+        expression: reading.dominant,
+        scores: reading.scores,
+        headMovement: reading.headMovement,
+        events: motionEvents.filter((event) => event.trackId === reading.id),
+      });
+    });
     latestPrimaryRef.current = {
       hasFace: primary != null,
       confidence: primary?.confidence ?? null,
@@ -533,6 +552,7 @@ export default function FacecamHUD() {
       blink: primary?.blink ?? null,
       headMovement: primary?.headMovement ?? null,
       events: motionEvents,
+      unifiedSignals,
       detectionStability,
       trackStability,
       scores: primary?.scores ?? emptyScores(),
