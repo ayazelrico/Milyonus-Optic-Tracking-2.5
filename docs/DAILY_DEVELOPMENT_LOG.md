@@ -167,3 +167,15 @@
 - **Metric:** `unifiedSignals` count should equal the number of active tracked faces per frame; each signal contains the documented top-level fields.
 - **Regression:** Existing primary recorder fields remain unchanged. Production build, `git diff --check`, and targeted lint passed. Raw landmark privacy boundary is explicit and requires review in an exported session.
 - **Next action:** Export a multi-face telemetry session, validate schema completeness and serialization, then proceed to Day 15 baseline quality gate.
+
+## Day 15 — Unified Signal Quality Gate
+
+- **Date:** 2026-11-05
+- **Feature:** Deterministic unified-signal schema validator
+- **Problem:** The unified signal contract was documented but had no repeatable automated gate for required fields, track cardinality, timestamp validity, or the landmark privacy boundary.
+- **Change:** Added `scripts/validate-unified-signal.mjs` and the `validate:unified` package command. The validator checks nested schema keys, unique integer track IDs, optional active-track count parity, finite timestamps, non-negative landmark counts, and rejects landmark payload keys other than `count`.
+- **Expected improvement:** Detect malformed telemetry and accidental raw-landmark persistence before downstream analytics consume an export.
+- **Actual result:** A deterministic two-track fixture passed. An intentionally invalid fixture containing `face.landmarks.x` was correctly rejected. Production build and targeted ESLint passed.
+- **Metric:** Validator pass/fail; valid fixture count `2`; invalid privacy fixture rejection confirmed.
+- **Regression:** Existing runtime fields remain unchanged. No real-camera or exported browser telemetry was available, so live IndexedDB serialization remains unverified.
+- **Next action:** Run the validator against an actual multi-face export, then begin Day 16 tracking-intelligence work only after schema validation passes on captured data.

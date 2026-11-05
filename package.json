@@ -11,7 +11,8 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "baseline": "node scripts/baseline.mjs"
+    "baseline": "node scripts/baseline.mjs",
+    "validate:unified": "node scripts/validate-unified-signal.mjs"
   },
   "dependencies": {
     "@mediapipe/tasks-vision": "^1.0.1",

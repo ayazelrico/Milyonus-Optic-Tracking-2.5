@@ -95,6 +95,14 @@ The event engine emits track-scoped `HEAD_TURN`, `HEAD_NOD`, `BLINK`, `FACE_FOUN
 
 Each detected track is also represented by a `UnifiedSignal` envelope containing timestamp, track ID, confidence, face presence, pose, eye openness and blink state, gaze, focus, expression scores, head movement, and track-scoped events. To avoid duplicating sensitive high-frequency coordinates in persistent telemetry, `face.landmarks` contains only a landmark count; raw landmark coordinates remain in the live processing path and are not copied into the unified recorder payload.
 
+The Day 15 quality gate validates a captured telemetry JSON file:
+
+```sh
+npm run validate:unified -- artifacts/telemetry.json
+```
+
+The validator checks required nested fields, unique integer track IDs, active-track count parity when `activeTrackIds` is provided, finite timestamps, non-negative landmark counts, and the landmark privacy boundary (`face.landmarks` may contain only `count`).
+
 ## Metrics
 
 When the exported CSV contains the relevant columns, the report calculates:
