@@ -36,6 +36,7 @@ import { BlinkTracker, type BlinkFrame } from "@/lib/blinkTracker";
 import { HeadMovementTracker, type HeadMovementFrame } from "@/lib/headMovement";
 import { MotionEventEngine } from "@/lib/motionEvents";
 import { createUnifiedSignal } from "@/lib/unifiedSignal";
+import { TemporalFaceStateTracker, type TemporalFaceStateFrame } from "@/lib/temporalFaceState";
 
 const TASKS_VISION_VERSION = "1.0.1";
 const WASM_BASE = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${TASKS_VISION_VERSION}/wasm`;
@@ -92,6 +93,7 @@ interface FaceReading {
   confidenceWeight: number;
   blink: BlinkFrame;
   headMovement: HeadMovementFrame;
+  temporalState: TemporalFaceStateFrame;
   scores: Scores;
   dominant: Emotion;
   box: PixelBox;
@@ -215,6 +217,7 @@ export default function FacecamHUD() {
   const blinkTrackerRef = useRef(new BlinkTracker());
   const headMovementRef = useRef(new HeadMovementTracker());
   const motionEventEngineRef = useRef(new MotionEventEngine());
+  const temporalStateRef = useRef(new TemporalFaceStateTracker());
   const lastFaceCountRef = useRef(0);
   const latestPrimaryRef = useRef<{
     hasFace: boolean;
@@ -400,6 +403,7 @@ export default function FacecamHUD() {
       const measurementPose = poseFromConfidence(pose, confidence);
       const weight = confidenceWeight(confidence);
       const headMovement = headMovementRef.current.update(trackIds[i]!, pose, now, weight);
+      const temporalState = temporalStateRef.current.observe(trackIds[i]!, now, headMovement, weight);
       const blink = blinkTrackerRef.current.update(
         trackIds[i]!,
         processorRef.current.calculateEAR(pts, "left"),
@@ -464,6 +468,7 @@ export default function FacecamHUD() {
         confidenceWeight: weight,
         blink,
         headMovement,
+        temporalState,
         scores,
         dominant,
         box,
@@ -517,6 +522,7 @@ export default function FacecamHUD() {
       ),
     );
     motionEvents.push(...motionEventEngineRef.current.observeMissing(activeTrackIds, now));
+    temporalStateRef.current.markMissing(activeTrackIds, now);
     const unifiedSignals = readings.map((reading) => {
       const gaze = gazeDirectionFromPose(reading.measurementPose);
       const focusScore = focusScoreFromPose(reading.measurementPose);
@@ -532,6 +538,7 @@ export default function FacecamHUD() {
         expression: reading.dominant,
         scores: reading.scores,
         headMovement: reading.headMovement,
+        temporalState: reading.temporalState,
         events: motionEvents.filter((event) => event.trackId === reading.id),
       });
     });
@@ -551,6 +558,7 @@ export default function FacecamHUD() {
       confidenceWeight: primary?.confidenceWeight ?? 0,
       blink: primary?.blink ?? null,
       headMovement: primary?.headMovement ?? null,
+      temporalState: primary?.temporalState ?? null,
       events: motionEvents,
       unifiedSignals,
       detectionStability,
@@ -704,6 +712,7 @@ export default function FacecamHUD() {
       blinkTrackerRef.current.reset();
       headMovementRef.current.reset();
       motionEventEngineRef.current.reset();
+      temporalStateRef.current.reset();
       lastFaceCountRef.current = 0;
       sessionStartRef.current = Date.now();
       lastGazeAwayLogRef.current = 0;

@@ -179,3 +179,15 @@
 - **Metric:** Validator pass/fail; valid fixture count `2`; invalid privacy fixture rejection confirmed.
 - **Regression:** Existing runtime fields remain unchanged. No real-camera or exported browser telemetry was available, so live IndexedDB serialization remains unverified.
 - **Next action:** Run the validator against an actual multi-face export, then begin Day 16 tracking-intelligence work only after schema validation passes on captured data.
+
+## Day 16 — Temporal Face State
+
+- **Date:** 2026-11-06
+- **Feature:** Per-track temporal lifecycle state
+- **Problem:** Track IDs and continuous movement metrics existed, but downstream consumers could not distinguish a newly observed, stable, moving, lost, or recovered face.
+- **Change:** Added `TemporalFaceStateTracker` with `new`, `stable`, `moving`, `lost`, and `recovered` states. Three usable observations promote a track to `stable`; movement intensity at or above `0.25` marks it `moving`; a returning track emits `recovered` for its first usable observation after `lost`. Confidence-zero frames do not advance state.
+- **Expected improvement:** Make track lifecycle and state transitions explicit without changing the existing ID assignment or occlusion policy.
+- **Actual result:** The temporal state path was integrated into each unified signal and primary telemetry payload. Targeted ESLint, the updated two-track unified-signal validator fixture, production build, and `git diff --check` passed. No real-camera lifecycle sequence was available.
+- **Metric:** `temporalState.state`, `previousState`, `transition`, and `observationCount` per tracked face frame.
+- **Regression:** Existing track IDs, events, and recorder fields remain backward compatible. New/lost/recovered behavior requires manual validation with face entry, exit, and re-entry sequences.
+- **Next action:** Validate state transitions against a labeled face entry/exit/recovery fixture, then proceed to Day 17 face centroid velocity.
