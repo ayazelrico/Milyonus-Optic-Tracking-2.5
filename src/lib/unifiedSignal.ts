@@ -5,6 +5,7 @@ import type { HeadPose } from "@/lib/facePose";
 import type { GazeDirection } from "@/lib/focusTracking";
 import type { MotionEvent } from "@/lib/motionEvents";
 import type { TemporalFaceStateFrame } from "@/lib/temporalFaceState";
+import type { FaceVelocityFrame } from "@/lib/faceVelocity";
 
 export interface UnifiedSignal {
   timestamp: number;
@@ -38,6 +39,7 @@ export interface UnifiedSignal {
   };
   headMovement: HeadMovementFrame;
   temporalState: TemporalFaceStateFrame;
+  faceVelocity: FaceVelocityFrame;
   events: MotionEvent[];
 }
 
@@ -54,6 +56,7 @@ export interface UnifiedSignalInput {
   scores: Scores;
   headMovement: HeadMovementFrame;
   temporalState: TemporalFaceStateFrame;
+  faceVelocity: FaceVelocityFrame;
   events: MotionEvent[];
 }
 
@@ -89,6 +92,7 @@ export function createUnifiedSignal(input: UnifiedSignalInput): UnifiedSignal {
     },
     headMovement: input.headMovement,
     temporalState: input.temporalState,
+    faceVelocity: input.faceVelocity,
     events: input.events,
   };
 }

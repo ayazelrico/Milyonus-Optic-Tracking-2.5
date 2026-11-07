@@ -37,6 +37,7 @@ import { HeadMovementTracker, type HeadMovementFrame } from "@/lib/headMovement"
 import { MotionEventEngine } from "@/lib/motionEvents";
 import { createUnifiedSignal } from "@/lib/unifiedSignal";
 import { TemporalFaceStateTracker, type TemporalFaceStateFrame } from "@/lib/temporalFaceState";
+import { FaceVelocityTracker, type FaceVelocityFrame } from "@/lib/faceVelocity";
 
 const TASKS_VISION_VERSION = "1.0.1";
 const WASM_BASE = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${TASKS_VISION_VERSION}/wasm`;
@@ -94,6 +95,7 @@ interface FaceReading {
   blink: BlinkFrame;
   headMovement: HeadMovementFrame;
   temporalState: TemporalFaceStateFrame;
+  faceVelocity: FaceVelocityFrame;
   scores: Scores;
   dominant: Emotion;
   box: PixelBox;
@@ -218,6 +220,7 @@ export default function FacecamHUD() {
   const headMovementRef = useRef(new HeadMovementTracker());
   const motionEventEngineRef = useRef(new MotionEventEngine());
   const temporalStateRef = useRef(new TemporalFaceStateTracker());
+  const faceVelocityRef = useRef(new FaceVelocityTracker());
   const lastFaceCountRef = useRef(0);
   const latestPrimaryRef = useRef<{
     hasFace: boolean;
@@ -404,6 +407,13 @@ export default function FacecamHUD() {
       const weight = confidenceWeight(confidence);
       const headMovement = headMovementRef.current.update(trackIds[i]!, pose, now, weight);
       const temporalState = temporalStateRef.current.observe(trackIds[i]!, now, headMovement, weight);
+      const faceVelocity = faceVelocityRef.current.update(
+        trackIds[i]!,
+        box.x + box.width / 2,
+        box.y + box.height / 2,
+        now,
+        weight,
+      );
       const blink = blinkTrackerRef.current.update(
         trackIds[i]!,
         processorRef.current.calculateEAR(pts, "left"),
@@ -469,6 +479,7 @@ export default function FacecamHUD() {
         blink,
         headMovement,
         temporalState,
+        faceVelocity,
         scores,
         dominant,
         box,
@@ -539,6 +550,7 @@ export default function FacecamHUD() {
         scores: reading.scores,
         headMovement: reading.headMovement,
         temporalState: reading.temporalState,
+        faceVelocity: reading.faceVelocity,
         events: motionEvents.filter((event) => event.trackId === reading.id),
       });
     });
@@ -559,6 +571,7 @@ export default function FacecamHUD() {
       blink: primary?.blink ?? null,
       headMovement: primary?.headMovement ?? null,
       temporalState: primary?.temporalState ?? null,
+      faceVelocity: primary?.faceVelocity ?? null,
       events: motionEvents,
       unifiedSignals,
       detectionStability,
@@ -713,6 +726,7 @@ export default function FacecamHUD() {
       headMovementRef.current.reset();
       motionEventEngineRef.current.reset();
       temporalStateRef.current.reset();
+      faceVelocityRef.current.reset();
       lastFaceCountRef.current = 0;
       sessionStartRef.current = Date.now();
       lastGazeAwayLogRef.current = 0;

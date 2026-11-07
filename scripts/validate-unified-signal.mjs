@@ -13,6 +13,7 @@ const requiredTopLevel = [
   "expression",
   "headMovement",
   "temporalState",
+  "faceVelocity",
   "events",
 ];
 const requiredFace = ["detected", "landmarks"];
@@ -22,6 +23,7 @@ const requiredGaze = ["direction", "score"];
 const requiredExpression = ["dominant", "scores"];
 const requiredMovement = ["intensity", "level", "angularSpeedDegPerSec"];
 const requiredTemporalState = ["state", "previousState", "transition", "observationCount"];
+const requiredFaceVelocity = ["vx", "vy", "speed"];
 
 function fail(message) {
   console.error(`Unified signal validation failed: ${message}`);
@@ -65,6 +67,7 @@ function validateSignal(signal, index) {
   valid = requireKeys(signal.headMovement, requiredMovement, `${path}.headMovement`) && valid;
   valid =
     requireKeys(signal.temporalState, requiredTemporalState, `${path}.temporalState`) && valid;
+  valid = requireKeys(signal.faceVelocity, requiredFaceVelocity, `${path}.faceVelocity`) && valid;
   if (!Array.isArray(signal.events)) (fail(`${path}.events must be an array`), (valid = false));
   if (!signal.face.landmarks || Object.keys(signal.face.landmarks).some((key) => key !== "count")) {
     fail(`${path}.face.landmarks may contain only count`);

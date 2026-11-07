@@ -191,3 +191,15 @@
 - **Metric:** `temporalState.state`, `previousState`, `transition`, and `observationCount` per tracked face frame.
 - **Regression:** Existing track IDs, events, and recorder fields remain backward compatible. New/lost/recovered behavior requires manual validation with face entry, exit, and re-entry sequences.
 - **Next action:** Validate state transitions against a labeled face entry/exit/recovery fixture, then proceed to Day 17 face centroid velocity.
+
+## Day 17 — Face Velocity
+
+- **Date:** 2026-11-07
+- **Feature:** Per-track face-centroid velocity
+- **Problem:** The tracker maintained centroid history for ID matching, but the unified signal did not expose how quickly a tracked face moved across the image.
+- **Change:** Added `FaceVelocityTracker`, which converts consecutive centroid displacement into time-normalized pixels-per-second `vx`, `vy`, and scalar `speed`. The first valid sample reports zero velocity; confidence-zero frames report `null` and preserve the previous valid sample.
+- **Expected improvement:** Make translational face movement measurable for later acceleration, motion classification, and tracking-quality analysis.
+- **Actual result:** Face velocity was integrated into each unified signal and primary telemetry payload. Targeted ESLint, the updated unified-signal validator fixture, production build, and `git diff --check` passed. Expected deterministic values were checked (`vx=100`, `vy=50`, `speed=111.803...`) and confidence-zero output was checked as `null`. The optional TypeScript runtime fixture could not be transpiled because this checkout has no standalone `esbuild` binary. No real-camera motion sequence was available.
+- **Metric:** `faceVelocity.vx`, `faceVelocity.vy`, and `faceVelocity.speed` in pixels per second.
+- **Regression:** Existing tracker ID assignment and temporal state behavior remain unchanged. Resolution, frame timing, occlusion, and confidence behavior require manual validation with labeled motion sequences; the standalone runtime fixture remains pending until a transpiler is available.
+- **Next action:** Validate velocity sign, magnitude, and null behavior on a controlled centroid fixture, then proceed to Day 18 head-pose velocity.

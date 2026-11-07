@@ -107,6 +107,10 @@ The validator checks required nested fields, unique integer track IDs, active-tr
 
 Each track now exposes a lifecycle state: `new`, `stable`, `moving`, `lost`, or `recovered`. Three usable observations promote a track from `new` to `stable`; movement intensity at or above `0.25` marks it `moving`; a returning track is marked `recovered` for its first usable observation after `lost`. Confidence-zero frames do not advance state.
 
+## 17. Face velocity
+
+Each usable track observation now includes face-centroid velocity in pixels per second: `vx`, `vy`, and scalar `speed`. The first valid observation has zero velocity because no prior centroid exists. Confidence-zero frames emit `null` velocity and do not replace the previous valid sample. Camera resolution and frame timing must be held constant when comparing velocity distributions.
+
 ## Metrics
 
 When the exported CSV contains the relevant columns, the report calculates:
@@ -132,6 +136,7 @@ When the exported CSV contains the relevant columns, the report calculates:
 - Motion event type, track ID, timestamp, and optional transition/duration fields
 - Unified per-track signal envelope and schema completeness
 - Temporal face state and transition counts
+- Face-centroid velocity (`vx`, `vy`, and `speed`)
 
 The current application export is expected to provide fields such as `second`, `timestamp`, `has_face`, `confidence`, `yaw_deg`, `pitch_deg`, `gaze`, and `focus_score`. Runtime instrumentation fields such as `fps`, `inference_latency_ms`, `cpu_percent`, `memory_mb`, and `track_id` are consumed automatically when they are added to the export schema.
 
