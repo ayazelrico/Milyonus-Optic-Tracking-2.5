@@ -111,6 +111,10 @@ Each track now exposes a lifecycle state: `new`, `stable`, `moving`, `lost`, or 
 
 Each usable track observation now includes face-centroid velocity in pixels per second: `vx`, `vy`, and scalar `speed`. The first valid observation has zero velocity because no prior centroid exists. Confidence-zero frames emit `null` velocity and do not replace the previous valid sample. Camera resolution and frame timing must be held constant when comparing velocity distributions.
 
+## 18. Head pose velocity
+
+Each usable track observation now includes smoothed head-pose velocity in degrees per second: `yawVelocity`, `pitchVelocity`, and `rollVelocity`. The first valid observation reports zero velocity; confidence-zero frames report `null` and do not replace the previous valid pose sample. Camera frame timing and pose units must remain consistent when comparing angular velocity distributions.
+
 ## Metrics
 
 When the exported CSV contains the relevant columns, the report calculates:
@@ -137,6 +141,7 @@ When the exported CSV contains the relevant columns, the report calculates:
 - Unified per-track signal envelope and schema completeness
 - Temporal face state and transition counts
 - Face-centroid velocity (`vx`, `vy`, and `speed`)
+- Head-pose velocity (`yawVelocity`, `pitchVelocity`, and `rollVelocity`)
 
 The current application export is expected to provide fields such as `second`, `timestamp`, `has_face`, `confidence`, `yaw_deg`, `pitch_deg`, `gaze`, and `focus_score`. Runtime instrumentation fields such as `fps`, `inference_latency_ms`, `cpu_percent`, `memory_mb`, and `track_id` are consumed automatically when they are added to the export schema.
 

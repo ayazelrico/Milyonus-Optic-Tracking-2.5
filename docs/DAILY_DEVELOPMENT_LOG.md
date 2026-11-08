@@ -203,3 +203,15 @@
 - **Metric:** `faceVelocity.vx`, `faceVelocity.vy`, and `faceVelocity.speed` in pixels per second.
 - **Regression:** Existing tracker ID assignment and temporal state behavior remain unchanged. Resolution, frame timing, occlusion, and confidence behavior require manual validation with labeled motion sequences; the standalone runtime fixture remains pending until a transpiler is available.
 - **Next action:** Validate velocity sign, magnitude, and null behavior on a controlled centroid fixture, then proceed to Day 18 head-pose velocity.
+
+## Day 18 — Head Pose Velocity
+
+- **Date:** 2026-11-08
+- **Feature:** Per-track yaw, pitch, and roll velocity
+- **Problem:** Smoothed head pose and aggregate movement intensity were available, but downstream consumers could not distinguish the angular direction and rate of yaw, pitch, and roll changes.
+- **Change:** Added `HeadPoseVelocityTracker`, which converts consecutive smoothed pose deltas into degrees-per-second `yawVelocity`, `pitchVelocity`, and `rollVelocity`. The first valid observation reports zero; confidence-zero frames report `null` and preserve the previous valid pose sample.
+- **Expected improvement:** Expose directional angular motion for future acceleration and slow/fast/sudden turn classification.
+- **Actual result:** Head-pose velocity was integrated into each unified signal and primary telemetry payload. Targeted ESLint, the updated unified-signal validator fixture, production build, and `git diff --check` passed. Expected deterministic values (`yaw=100`, `pitch=-50`, `roll=25` degrees/second) and confidence-zero null behavior were checked. No real-camera pose sequence was available.
+- **Metric:** `headPoseVelocity.yawVelocity`, `headPoseVelocity.pitchVelocity`, and `headPoseVelocity.rollVelocity` in degrees per second.
+- **Regression:** Existing head movement intensity, centroid velocity, temporal state, and track IDs remain unchanged. Pose sign conventions and confidence behavior require manual validation with labeled rotation sequences.
+- **Next action:** Validate angular velocity sign and magnitude on a controlled pose fixture, then proceed to Day 19 head-pose acceleration.
