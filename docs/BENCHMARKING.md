@@ -115,6 +115,10 @@ Each usable track observation now includes face-centroid velocity in pixels per 
 
 Each usable track observation now includes smoothed head-pose velocity in degrees per second: `yawVelocity`, `pitchVelocity`, and `rollVelocity`. The first valid observation reports zero velocity; confidence-zero frames report `null` and do not replace the previous valid pose sample. Camera frame timing and pose units must remain consistent when comparing angular velocity distributions.
 
+## 19. Head pose acceleration
+
+Each usable track observation now includes the second derivative of smoothed head pose in degrees per second squared: `yawAcceleration`, `pitchAcceleration`, and `rollAcceleration`. The first valid velocity sample reports zero acceleration; confidence-zero or null-velocity frames report `null` and do not advance the acceleration history. These values support slow, fast, and sudden-turn analysis but are not behavior labels by themselves.
+
 ## Metrics
 
 When the exported CSV contains the relevant columns, the report calculates:
@@ -142,6 +146,7 @@ When the exported CSV contains the relevant columns, the report calculates:
 - Temporal face state and transition counts
 - Face-centroid velocity (`vx`, `vy`, and `speed`)
 - Head-pose velocity (`yawVelocity`, `pitchVelocity`, and `rollVelocity`)
+- Head-pose acceleration (`yawAcceleration`, `pitchAcceleration`, and `rollAcceleration`)
 
 The current application export is expected to provide fields such as `second`, `timestamp`, `has_face`, `confidence`, `yaw_deg`, `pitch_deg`, `gaze`, and `focus_score`. Runtime instrumentation fields such as `fps`, `inference_latency_ms`, `cpu_percent`, `memory_mb`, and `track_id` are consumed automatically when they are added to the export schema.
 

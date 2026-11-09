@@ -215,3 +215,15 @@
 - **Metric:** `headPoseVelocity.yawVelocity`, `headPoseVelocity.pitchVelocity`, and `headPoseVelocity.rollVelocity` in degrees per second.
 - **Regression:** Existing head movement intensity, centroid velocity, temporal state, and track IDs remain unchanged. Pose sign conventions and confidence behavior require manual validation with labeled rotation sequences.
 - **Next action:** Validate angular velocity sign and magnitude on a controlled pose fixture, then proceed to Day 19 head-pose acceleration.
+
+## Day 19 — Head Pose Acceleration
+
+- **Date:** 2026-11-09
+- **Feature:** Per-track yaw, pitch, and roll acceleration
+- **Problem:** Head-pose velocity exposed angular direction and rate, but the system could not measure whether a turn was speeding up, slowing down, or changing abruptly.
+- **Change:** Added `HeadPoseAccelerationTracker`, which converts consecutive yaw, pitch, and roll velocity samples into degrees-per-second-squared `yawAcceleration`, `pitchAcceleration`, and `rollAcceleration`. The first valid velocity sample reports zero; confidence-zero or null-velocity frames report `null` and do not advance history.
+- **Expected improvement:** Provide a second-order motion signal for later slow, fast, and sudden-turn classification without labeling behavior prematurely.
+- **Actual result:** Head-pose acceleration was integrated into each unified signal and primary telemetry payload. Targeted ESLint, validator fixture, production build, and `git diff --check` remain to be verified; no real-camera acceleration sequence was available.
+- **Metric:** `headPoseAcceleration.yawAcceleration`, `headPoseAcceleration.pitchAcceleration`, and `headPoseAcceleration.rollAcceleration` in degrees per second squared.
+- **Regression:** Existing pose velocity, centroid velocity, temporal state, and event behavior remain unchanged. Sampling jitter, sign conventions, and confidence gaps require manual validation with labeled rotation sequences.
+- **Next action:** Validate acceleration sign, magnitude, and null behavior on a controlled velocity fixture, then proceed to Day 20 gaze stability.
