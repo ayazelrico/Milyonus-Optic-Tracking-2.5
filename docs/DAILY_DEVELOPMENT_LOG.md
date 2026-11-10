@@ -227,3 +227,15 @@
 - **Metric:** `headPoseAcceleration.yawAcceleration`, `headPoseAcceleration.pitchAcceleration`, and `headPoseAcceleration.rollAcceleration` in degrees per second squared.
 - **Regression:** Existing pose velocity, centroid velocity, temporal state, and event behavior remain unchanged. Sampling jitter, sign conventions, and confidence gaps require manual validation with labeled rotation sequences.
 - **Next action:** Validate acceleration sign, magnitude, and null behavior on a controlled velocity fixture, then proceed to Day 20 gaze stability.
+
+## Day 20 — Gaze Stability
+
+- **Date:** 2026-11-10
+- **Feature:** Per-track committed gaze direction
+- **Problem:** Gaze direction was classified independently on every frame, so pose values oscillating around a threshold could create one- or two-frame direction flips, noisy `GAZE_CHANGE` events, and unstable HUD/history values.
+- **Change:** Added `GazeStabilityTracker`, which requires three consecutive identical gaze candidates before committing a new direction per track. The committed value now feeds motion events, unified signals, the live HUD, and 1Hz history; existing pose thresholds and `none` semantics remain unchanged.
+- **Expected improvement:** Reduce transient gaze switches while preserving deliberate direction changes after a short confirmation window.
+- **Actual result:** The deterministic tracker fixture passed; the production build, unified-signal validator, new tracker targeted lint, and `git diff --check` passed. The repository-wide TypeScript check and broad lint remain red on pre-existing strict-mode and formatting issues in legacy files. No real-camera or labeled gaze sequence was available, so live switch-rate improvement remains unmeasured.
+- **Metric:** Raw candidate switch count versus committed gaze switch count; confirmation latency is three valid frames per track.
+- **Regression:** Existing focus-score computation, pose thresholds, track IDs, event schema, and privacy boundary remain unchanged. Manual validation is required for rapid intentional gaze changes, face loss/recovery, and multi-face sessions.
+- **Next action:** Capture a labeled threshold-oscillation and deliberate-gaze sequence, compare raw/committed switch rates, then proceed to Day 21 gaze transition episodes.

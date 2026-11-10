@@ -43,6 +43,7 @@ import {
   HeadPoseAccelerationTracker,
   type HeadPoseAccelerationFrame,
 } from "@/lib/headPoseAcceleration";
+import { GazeStabilityTracker } from "@/lib/gazeStability";
 
 const TASKS_VISION_VERSION = "1.0.1";
 const WASM_BASE = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${TASKS_VISION_VERSION}/wasm`;
@@ -103,6 +104,7 @@ interface FaceReading {
   faceVelocity: FaceVelocityFrame;
   headPoseVelocity: HeadPoseVelocityFrame;
   headPoseAcceleration: HeadPoseAccelerationFrame;
+  gaze: GazeDirection;
   scores: Scores;
   dominant: Emotion;
   box: PixelBox;
@@ -230,16 +232,19 @@ export default function FacecamHUD() {
   const faceVelocityRef = useRef(new FaceVelocityTracker());
   const headPoseVelocityRef = useRef(new HeadPoseVelocityTracker());
   const headPoseAccelerationRef = useRef(new HeadPoseAccelerationTracker());
+  const gazeStabilityRef = useRef(new GazeStabilityTracker());
   const lastFaceCountRef = useRef(0);
   const latestPrimaryRef = useRef<{
     hasFace: boolean;
     confidence: number | null;
     pose: HeadPose | null;
+    gaze: GazeDirection;
     deepTechScore: number | null;
   }>({
     hasFace: false,
     confidence: null,
     pose: null,
+    gaze: "none",
     deepTechScore: null,
   });
   const sessionStartRef = useRef(0);
@@ -430,6 +435,10 @@ export default function FacecamHUD() {
         now,
         weight,
       );
+      const gaze = gazeStabilityRef.current.update(
+        trackIds[i]!,
+        gazeDirectionFromPose(measurementPose),
+      );
       const blink = blinkTrackerRef.current.update(
         trackIds[i]!,
         processorRef.current.calculateEAR(pts, "left"),
@@ -498,6 +507,7 @@ export default function FacecamHUD() {
         faceVelocity,
         headPoseVelocity,
         headPoseAcceleration,
+        gaze,
         scores,
         dominant,
         box,
@@ -544,7 +554,7 @@ export default function FacecamHUD() {
         reading.id,
         reading.pose,
         now,
-        gazeDirectionFromPose(reading.measurementPose),
+        reading.gaze,
         reading.dominant,
         reading.blink,
         reading.confidenceWeight,
@@ -553,7 +563,6 @@ export default function FacecamHUD() {
     motionEvents.push(...motionEventEngineRef.current.observeMissing(activeTrackIds, now));
     temporalStateRef.current.markMissing(activeTrackIds, now);
     const unifiedSignals = readings.map((reading) => {
-      const gaze = gazeDirectionFromPose(reading.measurementPose);
       const focusScore = focusScoreFromPose(reading.measurementPose);
       return createUnifiedSignal({
         timestamp: now,
@@ -562,7 +571,7 @@ export default function FacecamHUD() {
         pose: reading.pose,
         landmarkCount: reading.landmarkCount,
         blink: reading.blink,
-        gaze,
+        gaze: reading.gaze,
         focusScore,
         expression: reading.dominant,
         scores: reading.scores,
@@ -578,6 +587,7 @@ export default function FacecamHUD() {
       hasFace: primary != null,
       confidence: primary?.confidence ?? null,
       pose: primary?.measurementPose ?? null,
+      gaze: primary?.gaze ?? "none",
       deepTechScore,
     };
 
@@ -634,7 +644,7 @@ export default function FacecamHUD() {
     if (phase !== "live") return;
     const id = setInterval(() => {
       const { hasFace, confidence, pose, deepTechScore } = latestPrimaryRef.current;
-      const gaze = gazeDirectionFromPose(pose);
+      const gaze = latestPrimaryRef.current.gaze;
       const focusScore = focusScoreFromPose(pose);
       const tSec = Math.round((Date.now() - sessionStartRef.current) / 1000);
       const sample: SecondSample = {
@@ -751,6 +761,7 @@ export default function FacecamHUD() {
       faceVelocityRef.current.reset();
       headPoseVelocityRef.current.reset();
       headPoseAccelerationRef.current.reset();
+      gazeStabilityRef.current.reset();
       lastFaceCountRef.current = 0;
       sessionStartRef.current = Date.now();
       lastGazeAwayLogRef.current = 0;
@@ -794,7 +805,7 @@ export default function FacecamHUD() {
   const dominant = primary?.dominant ?? "neutral";
   const scores = primary?.scores ?? emptyScores();
   const accent = EMOTION_TOKEN[dominant];
-  const liveGaze = gazeDirectionFromPose(primary?.measurementPose ?? null);
+  const liveGaze = primary?.gaze ?? "none";
   const liveFocusScore = focusScoreFromPose(primary?.measurementPose ?? null);
 
   return (
