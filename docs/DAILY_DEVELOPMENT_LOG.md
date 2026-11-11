@@ -239,3 +239,15 @@
 - **Metric:** Raw candidate switch count versus committed gaze switch count; confirmation latency is three valid frames per track.
 - **Regression:** Existing focus-score computation, pose thresholds, track IDs, event schema, and privacy boundary remain unchanged. Manual validation is required for rapid intentional gaze changes, face loss/recovery, and multi-face sessions.
 - **Next action:** Capture a labeled threshold-oscillation and deliberate-gaze sequence, compare raw/committed switch rates, then proceed to Day 21 gaze transition episodes.
+
+## Day 21 — Gaze Transition Episodes
+
+- **Date:** 2026-11-11
+- **Feature:** Duration-aware committed gaze transitions
+- **Problem:** Stabilized gaze directions produced `GAZE_CHANGE` events, but the events did not indicate how long the previous gaze direction had persisted.
+- **Change:** Extended the existing track-scoped gaze event state with `gazeStartedAt`. Every `GAZE_CHANGE` now includes `durationMs` for the preceding committed non-`none` gaze episode. Transitions through `none` close the episode timestamp without emitting a misleading directional change event.
+- **Expected improvement:** Make gaze transitions temporally interpretable for focus episodes and downstream session analytics without changing event types or raw pose thresholds.
+- **Actual result:** The deterministic event fixture passed with an 800 ms `center` episode, and it confirmed that a transition through `none` emits no misleading directional event. Targeted lint, production build, unified-signal validator, Prettier, and `git diff --check` also passed. No real-camera or labeled gaze sequence was available, so episode duration accuracy under detector gaps remains unmeasured.
+- **Metric:** `GAZE_CHANGE.durationMs`, measured from committed gaze transition timestamps in milliseconds.
+- **Regression:** Existing event fields, gaze stability behavior, track IDs, unified signal shape, and privacy boundary remain unchanged. Manual validation is required for rapid gaze changes, none transitions, face loss/recovery, and multi-face sessions.
+- **Next action:** Compare emitted episode durations against labeled gaze intervals, then proceed to Day 22 focus episode aggregation.

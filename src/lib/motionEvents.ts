@@ -25,6 +25,7 @@ interface TrackState {
   pose: HeadPose;
   at: number;
   gaze: GazeDirection;
+  gazeStartedAt: number;
   expression: Emotion;
   present: boolean;
   lastTurnAt: number;
@@ -57,6 +58,7 @@ export class MotionEventEngine {
         pose: { ...pose },
         at,
         gaze,
+        gazeStartedAt: at,
         expression,
         present: true,
         lastTurnAt: -Infinity,
@@ -82,8 +84,18 @@ export class MotionEventEngine {
         events.push({ type: "HEAD_NOD", trackId, at });
         previous.lastNodAt = at;
       }
-      if (previous.gaze !== gaze && previous.gaze !== "none" && gaze !== "none") {
-        events.push({ type: "GAZE_CHANGE", trackId, at, from: previous.gaze, to: gaze });
+      if (previous.gaze !== gaze) {
+        if (previous.gaze !== "none" && gaze !== "none") {
+          events.push({
+            type: "GAZE_CHANGE",
+            trackId,
+            at,
+            from: previous.gaze,
+            to: gaze,
+            durationMs: Math.max(0, at - previous.gazeStartedAt),
+          });
+        }
+        previous.gazeStartedAt = at;
       }
       if (previous.expression !== expression) {
         events.push({

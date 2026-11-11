@@ -123,6 +123,10 @@ Each usable track observation now includes the second derivative of smoothed hea
 
 Gaze classification now requires three consecutive identical candidates per track before a direction is committed. A transient one- or two-frame boundary flip therefore retains the previously committed direction. The existing pose thresholds and `none` semantics are unchanged; the tracker is reset at the start of a new session. Compare raw candidate switches against committed gaze switches when evaluating stability.
 
+## 21. Gaze transition episodes
+
+`GAZE_CHANGE` events now include `durationMs`, representing how long the previous committed non-`none` gaze direction persisted before the transition. The duration is derived from the track’s committed gaze timestamps, not from raw candidate frames; transitions through `none` close the prior episode without emitting a misleading directional change event.
+
 ## Metrics
 
 When the exported CSV contains the relevant columns, the report calculates:
@@ -152,6 +156,7 @@ When the exported CSV contains the relevant columns, the report calculates:
 - Head-pose velocity (`yawVelocity`, `pitchVelocity`, and `rollVelocity`)
 - Head-pose acceleration (`yawAcceleration`, `pitchAcceleration`, and `rollAcceleration`)
 - Raw-to-committed gaze switch reduction and committed gaze direction per track
+- Gaze episode duration (`GAZE_CHANGE.durationMs`) by source direction and track
 
 The current application export is expected to provide fields such as `second`, `timestamp`, `has_face`, `confidence`, `yaw_deg`, `pitch_deg`, `gaze`, and `focus_score`. Runtime instrumentation fields such as `fps`, `inference_latency_ms`, `cpu_percent`, `memory_mb`, and `track_id` are consumed automatically when they are added to the export schema.
 
