@@ -127,6 +127,10 @@ Gaze classification now requires three consecutive identical candidates per trac
 
 `GAZE_CHANGE` events now include `durationMs`, representing how long the previous committed non-`none` gaze direction persisted before the transition. The duration is derived from the track’s committed gaze timestamps, not from raw candidate frames; transitions through `none` close the prior episode without emitting a misleading directional change event.
 
+## 22. Focus episode aggregation
+
+Each unified signal now includes a track-scoped `focusEpisode` frame. A focus episode is active while committed gaze is `center`; `startedAt` and `durationMs` describe the current episode, while `completedDurationMs` is emitted on the first non-center frame that closes it. The tracker stores timestamps and scalar state only; it does not retain landmarks or raw frames.
+
 ## Metrics
 
 When the exported CSV contains the relevant columns, the report calculates:
@@ -157,6 +161,7 @@ When the exported CSV contains the relevant columns, the report calculates:
 - Head-pose acceleration (`yawAcceleration`, `pitchAcceleration`, and `rollAcceleration`)
 - Raw-to-committed gaze switch reduction and committed gaze direction per track
 - Gaze episode duration (`GAZE_CHANGE.durationMs`) by source direction and track
+- Active focus episode count, start time, current duration, and completed duration
 
 The current application export is expected to provide fields such as `second`, `timestamp`, `has_face`, `confidence`, `yaw_deg`, `pitch_deg`, `gaze`, and `focus_score`. Runtime instrumentation fields such as `fps`, `inference_latency_ms`, `cpu_percent`, `memory_mb`, and `track_id` are consumed automatically when they are added to the export schema.
 

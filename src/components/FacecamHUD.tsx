@@ -44,6 +44,7 @@ import {
   type HeadPoseAccelerationFrame,
 } from "@/lib/headPoseAcceleration";
 import { GazeStabilityTracker } from "@/lib/gazeStability";
+import { FocusEpisodeTracker, type FocusEpisodeFrame } from "@/lib/focusEpisodes";
 
 const TASKS_VISION_VERSION = "1.0.1";
 const WASM_BASE = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${TASKS_VISION_VERSION}/wasm`;
@@ -105,6 +106,7 @@ interface FaceReading {
   headPoseVelocity: HeadPoseVelocityFrame;
   headPoseAcceleration: HeadPoseAccelerationFrame;
   gaze: GazeDirection;
+  focusEpisode: FocusEpisodeFrame;
   scores: Scores;
   dominant: Emotion;
   box: PixelBox;
@@ -233,6 +235,7 @@ export default function FacecamHUD() {
   const headPoseVelocityRef = useRef(new HeadPoseVelocityTracker());
   const headPoseAccelerationRef = useRef(new HeadPoseAccelerationTracker());
   const gazeStabilityRef = useRef(new GazeStabilityTracker());
+  const focusEpisodeRef = useRef(new FocusEpisodeTracker());
   const lastFaceCountRef = useRef(0);
   const latestPrimaryRef = useRef<{
     hasFace: boolean;
@@ -439,6 +442,7 @@ export default function FacecamHUD() {
         trackIds[i]!,
         gazeDirectionFromPose(measurementPose),
       );
+      const focusEpisode = focusEpisodeRef.current.update(trackIds[i]!, gaze, now);
       const blink = blinkTrackerRef.current.update(
         trackIds[i]!,
         processorRef.current.calculateEAR(pts, "left"),
@@ -508,6 +512,7 @@ export default function FacecamHUD() {
         headPoseVelocity,
         headPoseAcceleration,
         gaze,
+        focusEpisode,
         scores,
         dominant,
         box,
@@ -549,6 +554,7 @@ export default function FacecamHUD() {
       ? calculateDeepTechScore(primary.measurementPose, primary.scores, primary.area, vpe)
       : null;
     const activeTrackIds = new Set(readings.map((reading) => reading.id));
+    focusEpisodeRef.current.observeMissing(activeTrackIds);
     const motionEvents = readings.flatMap((reading) =>
       motionEventEngineRef.current.update(
         reading.id,
@@ -580,6 +586,7 @@ export default function FacecamHUD() {
         faceVelocity: reading.faceVelocity,
         headPoseVelocity: reading.headPoseVelocity,
         headPoseAcceleration: reading.headPoseAcceleration,
+        focusEpisode: reading.focusEpisode,
         events: motionEvents.filter((event) => event.trackId === reading.id),
       });
     });
@@ -604,6 +611,7 @@ export default function FacecamHUD() {
       faceVelocity: primary?.faceVelocity ?? null,
       headPoseVelocity: primary?.headPoseVelocity ?? null,
       headPoseAcceleration: primary?.headPoseAcceleration ?? null,
+      focusEpisode: primary?.focusEpisode ?? null,
       events: motionEvents,
       unifiedSignals,
       detectionStability,
@@ -762,6 +770,7 @@ export default function FacecamHUD() {
       headPoseVelocityRef.current.reset();
       headPoseAccelerationRef.current.reset();
       gazeStabilityRef.current.reset();
+      focusEpisodeRef.current.reset();
       lastFaceCountRef.current = 0;
       sessionStartRef.current = Date.now();
       lastGazeAwayLogRef.current = 0;

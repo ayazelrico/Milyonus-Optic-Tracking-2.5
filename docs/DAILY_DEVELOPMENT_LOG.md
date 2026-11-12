@@ -251,3 +251,15 @@
 - **Metric:** `GAZE_CHANGE.durationMs`, measured from committed gaze transition timestamps in milliseconds.
 - **Regression:** Existing event fields, gaze stability behavior, track IDs, unified signal shape, and privacy boundary remain unchanged. Manual validation is required for rapid gaze changes, none transitions, face loss/recovery, and multi-face sessions.
 - **Next action:** Compare emitted episode durations against labeled gaze intervals, then proceed to Day 22 focus episode aggregation.
+
+## Day 22 — Focus Episode Aggregation
+
+- **Date:** 2026-11-12
+- **Feature:** Track-scoped committed-center focus episodes
+- **Problem:** Focus score was available per frame and gaze transitions had durations, but there was no explicit state describing when a continuous on-screen focus episode started, how long it was active, or how long it lasted after closing.
+- **Change:** Added `FocusEpisodeTracker`, which starts an episode when committed gaze becomes `center`, reports its current duration while active, and emits `completedDurationMs` when gaze leaves `center`. The frame is included in each unified signal and primary recorder payload; only scalar timestamps and durations are retained.
+- **Expected improvement:** Make continuous attention intervals directly aggregatable for later session summaries without changing gaze thresholds or storing sensitive raw landmarks.
+- **Actual result:** The deterministic fixture passed for active duration (`600 ms`), completed duration (`900 ms`), and missing-track reset behavior. Targeted lint, production build, unified-signal validator, Prettier, and whitespace checks also passed. No real-camera or labeled focus sequence was available, so duration accuracy and false episode rates remain unmeasured.
+- **Metric:** `focusEpisode.active`, `startedAt`, `durationMs`, and `completedDurationMs` per track.
+- **Regression:** Existing gaze direction, focus score, gaze events, track IDs, unified signal compatibility, and privacy boundary remain unchanged. Manual validation is required for face loss, detector gaps, rapid gaze changes, and multi-face sessions.
+- **Next action:** Compare completed focus episode durations against labeled attention intervals, then proceed to Day 23 focus quality scoring.
