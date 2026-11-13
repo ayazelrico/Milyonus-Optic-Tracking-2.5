@@ -263,3 +263,15 @@
 - **Metric:** `focusEpisode.active`, `startedAt`, `durationMs`, and `completedDurationMs` per track.
 - **Regression:** Existing gaze direction, focus score, gaze events, track IDs, unified signal compatibility, and privacy boundary remain unchanged. Manual validation is required for face loss, detector gaps, rapid gaze changes, and multi-face sessions.
 - **Next action:** Compare completed focus episode durations against labeled attention intervals, then proceed to Day 23 focus quality scoring.
+
+## Day 23 — Focus Quality Scoring
+
+- **Date:** 2026-11-13
+- **Feature:** Confidence- and continuity-aware focus quality
+- **Problem:** Pose-derived focus score described geometric alignment, but it did not expose whether the score was supported by detector confidence or a currently active committed-center episode.
+- **Change:** Added `focusQualityFromSignals`, which computes a bounded `score = focusScore × confidenceWeight × continuity` and classifies it as `poor`, `fair`, or `good`. The result is included in each unified signal and the primary recorder payload; it does not store raw landmarks or frames.
+- **Expected improvement:** Distinguish high geometric focus with weak evidence from a well-supported active focus signal, enabling safer downstream aggregation.
+- **Actual result:** Deterministic score/band fixtures passed (`good=1.0`, `fair=0.56`, inactive episode=`poor/0`). Targeted lint, production build, unified-signal validator, Prettier, and whitespace checks also passed. No real-camera or labeled attention sequence was available, so calibration against human attention remains unmeasured.
+- **Metric:** `focusQuality.score` in `[0, 1]` and `focusQuality.band` with thresholds `poor < 0.45`, `fair < 0.75`, `good >= 0.75`.
+- **Regression:** Existing pose focus score, gaze stability, focus episodes, event fields, track IDs, and privacy boundary remain unchanged. Manual validation is required for low confidence, face loss, rapid gaze changes, and multi-face sessions.
+- **Next action:** Compare focus quality against labeled confidence and attention intervals, then proceed to Day 24 focus quality aggregation.

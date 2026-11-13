@@ -9,6 +9,7 @@ import type { FaceVelocityFrame } from "@/lib/faceVelocity";
 import type { HeadPoseVelocityFrame } from "@/lib/headPoseVelocity";
 import type { HeadPoseAccelerationFrame } from "@/lib/headPoseAcceleration";
 import type { FocusEpisodeFrame } from "@/lib/focusEpisodes";
+import type { FocusQualityFrame } from "@/lib/focusQuality";
 
 export interface UnifiedSignal {
   timestamp: number;
@@ -46,6 +47,7 @@ export interface UnifiedSignal {
   headPoseVelocity: HeadPoseVelocityFrame;
   headPoseAcceleration: HeadPoseAccelerationFrame;
   focusEpisode: FocusEpisodeFrame;
+  focusQuality: FocusQualityFrame;
   events: MotionEvent[];
 }
 
@@ -66,6 +68,7 @@ export interface UnifiedSignalInput {
   headPoseVelocity: HeadPoseVelocityFrame;
   headPoseAcceleration: HeadPoseAccelerationFrame;
   focusEpisode: FocusEpisodeFrame;
+  focusQuality: FocusQualityFrame;
   events: MotionEvent[];
 }
 
@@ -105,6 +108,7 @@ export function createUnifiedSignal(input: UnifiedSignalInput): UnifiedSignal {
     headPoseVelocity: input.headPoseVelocity,
     headPoseAcceleration: input.headPoseAcceleration,
     focusEpisode: input.focusEpisode,
+    focusQuality: input.focusQuality,
     events: input.events,
   };
 }
