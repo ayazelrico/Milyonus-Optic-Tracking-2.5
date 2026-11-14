@@ -19,13 +19,15 @@ export function confidenceWeight(confidence: number | null): number {
   if (confidence == null || confidence < LOW_CONFIDENCE_CUTOFF) return 0;
   if (confidence >= FULL_CONFIDENCE_THRESHOLD) return 1;
   return clamp01(
-    (confidence - LOW_CONFIDENCE_CUTOFF) /
-      (FULL_CONFIDENCE_THRESHOLD - LOW_CONFIDENCE_CUTOFF),
+    (confidence - LOW_CONFIDENCE_CUTOFF) / (FULL_CONFIDENCE_THRESHOLD - LOW_CONFIDENCE_CUTOFF),
   );
 }
 
 /** Pulls uncertain pose values toward a neutral pose; rejects low-confidence detections. */
-export function poseFromConfidence(pose: HeadPose | null, confidence: number | null): HeadPose | null {
+export function poseFromConfidence(
+  pose: HeadPose | null,
+  confidence: number | null,
+): HeadPose | null {
   const weight = confidenceWeight(confidence);
   if (!pose || weight === 0) return null;
   return {
@@ -65,6 +67,7 @@ export interface SecondSample {
   deepTechScore: number | null;
   gaze: GazeDirection;
   focusScore: number;
+  focusQualityScore: number;
 }
 
 export interface MinuteReport {
@@ -73,6 +76,8 @@ export interface MinuteReport {
   avgConfidence: number | null;
   faceDetectedPct: number;
   avgFocusScore: number;
+  avgFocusQualityScore: number;
+  highQualityPct: number;
   focusedPct: number;
   lookingAwayPct: number;
 }
@@ -95,6 +100,9 @@ export function buildMinuteReports(samples: readonly SecondSample[]): MinuteRepo
       const focused = list.filter((s) => s.gaze === "center").length;
       const away = list.filter((s) => s.gaze === "left" || s.gaze === "right").length;
       const avgFocusScore = list.reduce((sum, s) => sum + s.focusScore, 0) / list.length;
+      const avgFocusQualityScore =
+        list.reduce((sum, s) => sum + s.focusQualityScore, 0) / list.length;
+      const highQuality = list.filter((s) => s.focusQualityScore >= 0.75).length;
 
       return {
         minute,
@@ -104,6 +112,8 @@ export function buildMinuteReports(samples: readonly SecondSample[]): MinuteRepo
           : null,
         faceDetectedPct: (withFace.length / list.length) * 100,
         avgFocusScore,
+        avgFocusQualityScore,
+        highQualityPct: (highQuality / list.length) * 100,
         focusedPct: (focused / list.length) * 100,
         lookingAwayPct: (away / list.length) * 100,
       };
@@ -111,7 +121,8 @@ export function buildMinuteReports(samples: readonly SecondSample[]): MinuteRepo
 }
 
 export function samplesToCsv(samples: readonly SecondSample[]): string {
-  const header = "second,timestamp,has_face,confidence,yaw_deg,pitch_deg,distance,area,deep_tech_score,gaze,focus_score\n";
+  const header =
+    "second,timestamp,has_face,confidence,yaw_deg,pitch_deg,distance,area,deep_tech_score,gaze,focus_score,focus_quality_score\n";
   const rows = samples.map((s) =>
     [
       s.tSec,
@@ -125,6 +136,7 @@ export function samplesToCsv(samples: readonly SecondSample[]): string {
       s.deepTechScore != null ? s.deepTechScore.toFixed(4) : "",
       s.gaze,
       s.focusScore.toFixed(4),
+      s.focusQualityScore.toFixed(4),
     ].join(","),
   );
   return header + rows.join("\n");

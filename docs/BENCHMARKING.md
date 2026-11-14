@@ -135,6 +135,10 @@ Each unified signal now includes a track-scoped `focusEpisode` frame. A focus ep
 
 Each unified signal now includes `focusQuality`, a bounded score combining pose-derived focus score, detector confidence weight, and active committed-center continuity. The score is `focusScore × confidenceWeight × continuity`, where continuity is `1` only during an active center-gaze episode. Bands are `poor < 0.45`, `fair < 0.75`, and `good >= 0.75`. This is a signal-quality measure, not a claim about human attention.
 
+## 24. Focus quality aggregation
+
+The 1 Hz history and per-minute report now preserve `focus_quality_score`. Minute reports expose its arithmetic mean as `avgFocusQualityScore` and the share of samples at or above the `good` threshold as `highQualityPct`. CSV exports include the new score column; missing camera samples are never replaced with synthetic measurements.
+
 ## Metrics
 
 When the exported CSV contains the relevant columns, the report calculates:
@@ -167,6 +171,7 @@ When the exported CSV contains the relevant columns, the report calculates:
 - Gaze episode duration (`GAZE_CHANGE.durationMs`) by source direction and track
 - Active focus episode count, start time, current duration, and completed duration
 - Focus quality score and band (`poor`, `fair`, or `good`)
+- Mean focus quality and high-quality sample percentage per minute
 
 The current application export is expected to provide fields such as `second`, `timestamp`, `has_face`, `confidence`, `yaw_deg`, `pitch_deg`, `gaze`, and `focus_score`. Runtime instrumentation fields such as `fps`, `inference_latency_ms`, `cpu_percent`, `memory_mb`, and `track_id` are consumed automatically when they are added to the export schema.
 

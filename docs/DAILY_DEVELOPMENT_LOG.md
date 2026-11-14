@@ -275,3 +275,15 @@
 - **Metric:** `focusQuality.score` in `[0, 1]` and `focusQuality.band` with thresholds `poor < 0.45`, `fair < 0.75`, `good >= 0.75`.
 - **Regression:** Existing pose focus score, gaze stability, focus episodes, event fields, track IDs, and privacy boundary remain unchanged. Manual validation is required for low confidence, face loss, rapid gaze changes, and multi-face sessions.
 - **Next action:** Compare focus quality against labeled confidence and attention intervals, then proceed to Day 24 focus quality aggregation.
+
+## Day 24 — Focus Quality Aggregation
+
+- **Date:** 2026-11-14
+- **Feature:** Per-second and per-minute focus quality aggregation
+- **Problem:** Focus quality was available in high-resolution telemetry, but the 1 Hz history, CSV export, and minute report did not preserve or summarize it.
+- **Change:** Added `focusQualityScore` to second samples and CSV exports. Minute reports now calculate `avgFocusQualityScore` and `highQualityPct` using the existing `good >= 0.75` threshold; the HUD displays both values.
+- **Expected improvement:** Make evidence-aware focus quality comparable across minutes and exportable for downstream session analysis without changing the underlying quality formula.
+- **Actual result:** The deterministic three-sample fixture passed with average quality `0.52`, high-quality share `33.33%`, and the new CSV column. Production build, targeted lint, unified-signal validation, Prettier, and whitespace checks passed. No real-camera session was available, so runtime aggregation remains unmeasured.
+- **Metric:** `focusQualityScore` per 1 Hz sample; `avgFocusQualityScore` and `highQualityPct` per minute.
+- **Regression:** Existing focus score, gaze, confidence, focus quality formula, CSV fields, and minute report metrics remain backward compatible except for the appended CSV column and additive report fields. Manual validation is required for sparse samples, session boundaries, and multi-face primary-track changes.
+- **Next action:** Compare minute aggregates against labeled focus intervals, then proceed to Day 25 focus episode quality weighting.

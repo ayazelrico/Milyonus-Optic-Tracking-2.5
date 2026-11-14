@@ -244,12 +244,14 @@ export default function FacecamHUD() {
     confidence: number | null;
     pose: HeadPose | null;
     gaze: GazeDirection;
+    focusQuality: FocusQualityFrame;
     deepTechScore: number | null;
   }>({
     hasFace: false,
     confidence: null,
     pose: null,
     gaze: "none",
+    focusQuality: { score: 0, band: "poor" },
     deepTechScore: null,
   });
   const sessionStartRef = useRef(0);
@@ -600,6 +602,7 @@ export default function FacecamHUD() {
       confidence: primary?.confidence ?? null,
       pose: primary?.measurementPose ?? null,
       gaze: primary?.gaze ?? "none",
+      focusQuality: primary?.focusQuality ?? { score: 0, band: "poor" },
       deepTechScore,
     };
 
@@ -660,6 +663,7 @@ export default function FacecamHUD() {
       const { hasFace, confidence, pose, deepTechScore } = latestPrimaryRef.current;
       const gaze = latestPrimaryRef.current.gaze;
       const focusScore = focusScoreFromPose(pose);
+      const focusQualityScore = latestPrimaryRef.current.focusQuality.score;
       const tSec = Math.round((Date.now() - sessionStartRef.current) / 1000);
       const sample: SecondSample = {
         tSec,
@@ -675,6 +679,7 @@ export default function FacecamHUD() {
         deepTechScore,
         gaze,
         focusScore,
+        focusQualityScore,
       };
       setSamples((prev) => [...prev, sample].slice(-14400));
 
@@ -1031,6 +1036,14 @@ export default function FacecamHUD() {
                   ],
                   ["Focused", currentMinute ? `${currentMinute.focusedPct.toFixed(0)}%` : "--"],
                   [
+                    "Quality",
+                    currentMinute ? `${(currentMinute.avgFocusQualityScore * 100).toFixed(0)}%` : "--",
+                  ],
+                  [
+                    "Good quality",
+                    currentMinute ? `${currentMinute.highQualityPct.toFixed(0)}%` : "--",
+                  ],
+                  [
                     "Looking away",
                     currentMinute ? `${currentMinute.lookingAwayPct.toFixed(0)}%` : "--",
                   ],
@@ -1127,6 +1140,8 @@ export default function FacecamHUD() {
                       Face Detected
                     </th>
                     <th className="border-b border-white/10 py-1.5 pr-3 font-normal">Focused</th>
+                    <th className="border-b border-white/10 py-1.5 pr-3 font-normal">Quality</th>
+                    <th className="border-b border-white/10 py-1.5 pr-3 font-normal">Good Quality</th>
                     <th className="border-b border-white/10 py-1.5 font-normal">Looking Away</th>
                   </tr>
                 </thead>
@@ -1151,6 +1166,12 @@ export default function FacecamHUD() {
                         style={{ color: "var(--happy)" }}
                       >
                         {m.focusedPct.toFixed(0)}%
+                      </td>
+                      <td className="border-b border-white/5 py-1.5 pr-3" style={{ color: "var(--happy)" }}>
+                        {(m.avgFocusQualityScore * 100).toFixed(0)}%
+                      </td>
+                      <td className="border-b border-white/5 py-1.5 pr-3" style={{ color: "var(--happy)" }}>
+                        {m.highQualityPct.toFixed(0)}%
                       </td>
                       <td
                         className="border-b border-white/5 py-1.5"
